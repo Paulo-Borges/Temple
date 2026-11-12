@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="Temple.Api/Temple.Api.csproj" />
+  <Project Path="Temple.Application/Temple.Application.csproj" />
+  <Project Path="Temple.Domain/Temple.Domain.csproj" />
+  <Project Path="Temple.Infrastructure/Temple.Infrastructure.csproj" />
+  <Project Path="Temple.Tests/Temple.Tests.csproj" />
+</Solution>
