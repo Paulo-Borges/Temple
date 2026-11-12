@@ -20,5 +20,17 @@ dist-ssr
 *.suo
 *.ntvs*
 *.njsproj
-*.sln
 *.sw?
+
+# .NET: saída de compilação
+bin/
+obj/
+
+# .NET: arquivos do usuário e do Visual Studio
+*.user
+*.rsuser
+.vs/
+
+# .NET: resultados de testes
+[Tt]est[Rr]esults/
+*.trx
