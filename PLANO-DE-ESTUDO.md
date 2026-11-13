@@ -11,7 +11,7 @@
 | Módulo | Tema | Aulas | Concluídas | Status |
 |---|---|:---:|:---:|:---:|
 | 0 | Ambiente | 2 | 2 | ✅ |
-| 1 | Fundamentos do Backend | 4 | 1 | 🔄 |
+| 1 | Fundamentos do Backend | 4 | 2 | 🔄 |
 | 2 | Persistência (EF Core + SQL Server) | 3 | 0 | ⬜ |
 | 3 | Application e API | 4 | 0 | ⬜ |
 | 4 | Segurança | 3 | 0 | ⬜ |
@@ -21,7 +21,7 @@
 | 7 | Integração Front + API | 4 | 0 | ⬜ |
 | 8 | Funcionalidades Finais | 4 | 0 | ⬜ |
 | 9 | Qualidade | 2 | 0 | ⬜ |
-| **Total** | | **39** | **3** | **8%** |
+| **Total** | | **39** | **4** | **10%** |
 
 ---
 
@@ -74,6 +74,9 @@ Temple/
 ## 📌 Decisões de domínio
 
 - **Igreja:** a matriz tem filiais vinculadas (auto-relacionamento por `IgrejaMatrizId`).
+  - Campos: Nome, CNPJ, Telefone e Data de fundação (todos obrigatórios), Ativa (informada no cadastro) e Endereço (entra na Aula 1.3).
+  - Só 2 níveis: uma filial **não** pode ter filiais.
+  - CNPJ guardado sem máscara, aceitando o formato alfanumérico (em vigor desde jul/2026).
 - **Membro:** nome, endereço, matrícula, data de nascimento (`DateOnly`).
 - **Certificados:** Batismo, Apresentação de Criança e Promoção de cargo (membros e funcionários).
 - **Financeiro:** entradas e saídas (dízimos, ofertas, outras entradas e despesas).
@@ -96,7 +99,7 @@ Temple/
 | # | Aula | Status |
 |---|---|:---:|
 | 1.1 | Solution e projetos com o `dotnet` CLI e referências entre camadas | ✅ |
-| 1.2 | Domain: entidade `Igreja` (classes, propriedades, encapsulamento) | ⬜ |
+| 1.2 | Domain: entidade `Igreja` (classes, propriedades, encapsulamento) | ✅ |
 | 1.3 | Domain: `Membro`, value object `Endereco`, `DateOnly` | ⬜ |
 | 1.4 | Domain: enums `TipoCargo`, `TipoCertificado` e `HistoricoCargo` | ⬜ |
 
@@ -179,3 +182,4 @@ Temple/
 | 2026-11-12 | 0.1 | Ambiente verificado: .NET SDK 10.0.401, Node 26.10.0, npm 11.19.1, Git 2.42, SQL Server 2025 LocalDB, extensões do VS Code | Docker instalado, mas não estava rodando |
 | 2026-11-12 | 0.2 | Aula de Git e `.gitignore`. Primeiro commit (`7b1a5f9`) feito pelo usuário na branch `main`, com remoto `origin` | `.gitignore` ajustado para .NET: removido `*.sln`; incluídos `bin/`, `obj/`, `*.user`, `*.rsuser`, `.vs/`, `TestResults/`, `*.trx` |
 | 2026-11-12 | 1.1 | Backend criado: `global.json` (SDK 10.0.401), `Temple.slnx`, 5 projetos, referências entre as camadas e `Directory.Build.props` (avisos tratados como erros). Build com 0 avisos e 0 erros | Erro no Passo 5 (faltava o `Temple.slnx`), resolvido rodando o Passo 3 |
+| 2026-11-13 | 1.2 | Entidade `Igreja` em `Temple.Domain/Entities`: `private set`, construtor privado com validações, `CriarMatriz` (estático) e `CriarFilial` (só a partir da matriz), `Ativar`/`Desativar`. Build com 0 avisos e 0 erros | Arquivo criado primeiro em `backend/Domain/`, fora do projeto, e por isso não compilava: movido. Removido o parâmetro `Igreja matriz` de `CriarFilial`, que sobrava porque a matriz já é o `this`. Pendente: dígitos verificadores do CNPJ (value object) e `TimeProvider` (Módulo 9) |
