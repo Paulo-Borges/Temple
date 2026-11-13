@@ -11,7 +11,7 @@
 | Módulo | Tema | Aulas | Concluídas | Status |
 |---|---|:---:|:---:|:---:|
 | 0 | Ambiente | 2 | 2 | ✅ |
-| 1 | Fundamentos do Backend | 4 | 2 | 🔄 |
+| 1 | Fundamentos do Backend | 4 | 3 | 🔄 |
 | 2 | Persistência (EF Core + SQL Server) | 3 | 0 | ⬜ |
 | 3 | Application e API | 4 | 0 | ⬜ |
 | 4 | Segurança | 3 | 0 | ⬜ |
@@ -21,7 +21,7 @@
 | 7 | Integração Front + API | 4 | 0 | ⬜ |
 | 8 | Funcionalidades Finais | 4 | 0 | ⬜ |
 | 9 | Qualidade | 2 | 0 | ⬜ |
-| **Total** | | **39** | **4** | **10%** |
+| **Total** | | **39** | **5** | **13%** |
 
 ---
 
@@ -78,6 +78,9 @@ Temple/
   - Só 2 níveis: uma filial **não** pode ter filiais.
   - CNPJ guardado sem máscara, aceitando o formato alfanumérico (em vigor desde jul/2026).
 - **Membro:** nome, endereço, matrícula, data de nascimento (`DateOnly`).
+  - Matrícula: `int` gerado pelo banco, **única no sistema inteiro** (não reinicia por igreja).
+  - Pertence obrigatoriamente a uma igreja (`Guid`), e **não pode ser cadastrado em igreja inativa**.
+- **Endereco (value object):** Logradouro, Número (`string`, aceita "S/N"), Bairro, Cidade, UF e CEP obrigatórios; Complemento opcional. Obrigatório na Igreja e no Membro.
 - **Certificados:** Batismo, Apresentação de Criança e Promoção de cargo (membros e funcionários).
 - **Financeiro:** entradas e saídas (dízimos, ofertas, outras entradas e despesas).
   - Dízimo: membro **obrigatório** (`Guid`).
@@ -100,7 +103,7 @@ Temple/
 |---|---|:---:|
 | 1.1 | Solution e projetos com o `dotnet` CLI e referências entre camadas | ✅ |
 | 1.2 | Domain: entidade `Igreja` (classes, propriedades, encapsulamento) | ✅ |
-| 1.3 | Domain: `Membro`, value object `Endereco`, `DateOnly` | ⬜ |
+| 1.3 | Domain: `Membro`, value object `Endereco`, `DateOnly` | ✅ |
 | 1.4 | Domain: enums `TipoCargo`, `TipoCertificado` e `HistoricoCargo` | ⬜ |
 
 ### Módulo 2: Persistência
@@ -183,3 +186,4 @@ Temple/
 | 2026-11-12 | 0.2 | Aula de Git e `.gitignore`. Primeiro commit (`7b1a5f9`) feito pelo usuário na branch `main`, com remoto `origin` | `.gitignore` ajustado para .NET: removido `*.sln`; incluídos `bin/`, `obj/`, `*.user`, `*.rsuser`, `.vs/`, `TestResults/`, `*.trx` |
 | 2026-11-12 | 1.1 | Backend criado: `global.json` (SDK 10.0.401), `Temple.slnx`, 5 projetos, referências entre as camadas e `Directory.Build.props` (avisos tratados como erros). Build com 0 avisos e 0 erros | Erro no Passo 5 (faltava o `Temple.slnx`), resolvido rodando o Passo 3 |
 | 2026-11-13 | 1.2 | Entidade `Igreja` em `Temple.Domain/Entities`: `private set`, construtor privado com validações, `CriarMatriz` (estático) e `CriarFilial` (só a partir da matriz), `Ativar`/`Desativar`. Build com 0 avisos e 0 erros | Arquivo criado primeiro em `backend/Domain/`, fora do projeto, e por isso não compilava: movido. Removido o parâmetro `Igreja matriz` de `CriarFilial`, que sobrava porque a matriz já é o `this`. Pendente: dígitos verificadores do CNPJ (value object) e `TimeProvider` (Módulo 9) |
+| 2026-11-13 | 1.3 | Value object `Endereco` (`sealed record`, imutável, só `get`, validação de UF e CEP). Entidade `Membro` (matrícula `int` gerada pelo banco, `IgrejaId` obrigatório, `CalcularIdade`, `AlterarNome`, `AlterarEndereco`). `Endereco` adicionado à `Igreja`. Build com 0 avisos e 0 erros | Regra nova: não cadastrar membro em igreja inativa. Removida uma linha `Ativa = ativa` duplicada no construtor da `Igreja`. Para a Aula 2.1: matrícula única no sistema inteiro (índice único). Em aberto: o que acontece com os membros quando a igreja é desativada (Módulo 5) |

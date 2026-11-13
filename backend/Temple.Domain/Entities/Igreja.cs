@@ -1,3 +1,4 @@
+using Temple.Domain.ValueObjects;
 // namespace e classe  
 namespace Temple.Domain.Entities;
 
@@ -18,6 +19,8 @@ public sealed class Igreja
     public DateOnly DataFundacao { get; private set; }
 
     public bool Ativa { get; private set; }
+    public Endereco Endereco { get; private set; }
+
 
     public Guid? IgrejaMatrizId { get; private set; }
     public Igreja? IgrejaMatriz { get; private set; }
@@ -30,32 +33,36 @@ public sealed class Igreja
 
     // construtor privado da igreja
 
-        private Igreja(string nome, string cnpj, string telefone, DateOnly dataFundacao, bool ativa)
+        private Igreja(string nome, string cnpj, string telefone, DateOnly dataFundacao, bool ativa, Endereco endereco)
     {
+
+        ArgumentNullException.ThrowIfNull(endereco);
+
         Id = Guid.NewGuid();
         Nome = ValidarNome(nome);
         Cnpj = ValidarCnpj(cnpj);
         Telefone = ValidarTelefone(telefone);
         DataFundacao = ValidarDataFundacao(dataFundacao);
         Ativa = ativa;
+        Endereco = endereco;
     }
 
 
     // método estático para criar matriz
-    public static Igreja CriarMatriz(string nome, string cnpj, string telefone, DateOnly dataFundacao, bool ativa)
+    public static Igreja CriarMatriz(string nome, string cnpj, string telefone, DateOnly dataFundacao, bool ativa,  Endereco endereco)
     {
-        return new Igreja(nome, cnpj, telefone, dataFundacao, ativa);
+        return new Igreja(nome, cnpj, telefone, dataFundacao, ativa, endereco);
     }
 
     // método para criar filial
-    public Igreja CriarFilial(string nome, string cnpj, string telefone, DateOnly dataFundacao, bool ativa)
+    public Igreja CriarFilial(string nome, string cnpj, string telefone, DateOnly dataFundacao, bool ativa,  Endereco endereco)
     {
          if (!EhMatriz)
         {
             throw new InvalidOperationException("Uma filial não pode ter filiais.");
         }
 
-        Igreja filial = new(nome, cnpj, telefone, dataFundacao, ativa)
+        Igreja filial = new(nome, cnpj, telefone, dataFundacao, ativa, endereco)
         {
             IgrejaMatrizId = Id,
             IgrejaMatriz = this
@@ -67,6 +74,13 @@ public sealed class Igreja
 
 
     // métodos para ativar e desativar a igreja
+
+        public void AlterarEndereco(Endereco novoEndereco)
+    {
+        ArgumentNullException.ThrowIfNull(novoEndereco);
+        Endereco = novoEndereco;
+    }
+
         public void Ativar()
     {
         Ativa = true;
