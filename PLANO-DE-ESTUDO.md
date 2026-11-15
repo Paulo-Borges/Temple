@@ -11,7 +11,7 @@
 | Módulo | Tema | Aulas | Concluídas | Status |
 |---|---|:---:|:---:|:---:|
 | 0 | Ambiente | 2 | 2 | ✅ |
-| 1 | Fundamentos do Backend | 4 | 3 | 🔄 |
+| 1 | Fundamentos do Backend | 4 | 4 | ✅ |
 | 2 | Persistência (EF Core + SQL Server) | 3 | 0 | ⬜ |
 | 3 | Application e API | 4 | 0 | ⬜ |
 | 4 | Segurança | 3 | 0 | ⬜ |
@@ -21,7 +21,7 @@
 | 7 | Integração Front + API | 4 | 0 | ⬜ |
 | 8 | Funcionalidades Finais | 4 | 0 | ⬜ |
 | 9 | Qualidade | 2 | 0 | ⬜ |
-| **Total** | | **39** | **5** | **13%** |
+| **Total** | | **39** | **6** | **15%** |
 
 ---
 
@@ -81,6 +81,10 @@ Temple/
   - Matrícula: `int` gerado pelo banco, **única no sistema inteiro** (não reinicia por igreja).
   - Pertence obrigatoriamente a uma igreja (`Guid`), e **não pode ser cadastrado em igreja inativa**.
 - **Endereco (value object):** Logradouro, Número (`string`, aceita "S/N"), Bairro, Cidade, UF e CEP obrigatórios; Complemento opcional. Obrigatório na Igreja e no Membro.
+- **Cargos e perfis (dois enums separados):**
+  - `TipoCargo` (eclesiástico): Membro, Cooperador, Diácono, Presbítero, Evangelista, Missionário e Pastor. **Um por vez**, informado no cadastro, e só muda por `PromoverCargo`, que grava o `HistoricoCargo`.
+  - `Perfil` (acesso ao sistema): Pastor, Tesoureiro, Secretário, Líder, Líder dos Varões, das Irmãs, dos Jovens e das Crianças, Funcionário e Cozinheira. **Vários por usuário**, ligado ao login no Módulo 4.
+  - `GrupoMembro`: Varões, Irmãs, Jovens e Crianças. **Opcional** no membro (`GrupoMembro?`).
 - **Certificados:** Batismo, Apresentação de Criança e Promoção de cargo (membros e funcionários).
 - **Financeiro:** entradas e saídas (dízimos, ofertas, outras entradas e despesas).
   - Dízimo: membro **obrigatório** (`Guid`).
@@ -104,7 +108,7 @@ Temple/
 | 1.1 | Solution e projetos com o `dotnet` CLI e referências entre camadas | ✅ |
 | 1.2 | Domain: entidade `Igreja` (classes, propriedades, encapsulamento) | ✅ |
 | 1.3 | Domain: `Membro`, value object `Endereco`, `DateOnly` | ✅ |
-| 1.4 | Domain: enums `TipoCargo`, `TipoCertificado` e `HistoricoCargo` | ⬜ |
+| 1.4 | Domain: enums `TipoCargo`, `TipoCertificado` e `HistoricoCargo` | ✅ |
 
 ### Módulo 2: Persistência
 | # | Aula | Status |
@@ -187,3 +191,4 @@ Temple/
 | 2026-11-12 | 1.1 | Backend criado: `global.json` (SDK 10.0.401), `Temple.slnx`, 5 projetos, referências entre as camadas e `Directory.Build.props` (avisos tratados como erros). Build com 0 avisos e 0 erros | Erro no Passo 5 (faltava o `Temple.slnx`), resolvido rodando o Passo 3 |
 | 2026-11-13 | 1.2 | Entidade `Igreja` em `Temple.Domain/Entities`: `private set`, construtor privado com validações, `CriarMatriz` (estático) e `CriarFilial` (só a partir da matriz), `Ativar`/`Desativar`. Build com 0 avisos e 0 erros | Arquivo criado primeiro em `backend/Domain/`, fora do projeto, e por isso não compilava: movido. Removido o parâmetro `Igreja matriz` de `CriarFilial`, que sobrava porque a matriz já é o `this`. Pendente: dígitos verificadores do CNPJ (value object) e `TimeProvider` (Módulo 9) |
 | 2026-11-13 | 1.3 | Value object `Endereco` (`sealed record`, imutável, só `get`, validação de UF e CEP). Entidade `Membro` (matrícula `int` gerada pelo banco, `IgrejaId` obrigatório, `CalcularIdade`, `AlterarNome`, `AlterarEndereco`). `Endereco` adicionado à `Igreja`. Build com 0 avisos e 0 erros | Regra nova: não cadastrar membro em igreja inativa. Removida uma linha `Ativa = ativa` duplicada no construtor da `Igreja`. Para a Aula 2.1: matrícula única no sistema inteiro (índice único). Em aberto: o que acontece com os membros quando a igreja é desativada (Módulo 5) |
+| 2026-11-15 | 1.4 | Enums `TipoCargo`, `Perfil`, `GrupoMembro` e `TipoCertificado` (valores explícitos começando em 1). Entidade `HistoricoCargo` com construtor `internal`. `Membro` ganhou `CargoAtual`, `Grupo`, `HistoricoCargos`, `PromoverCargo` e `AlterarGrupo`, com validação por `Enum.IsDefined`. Build com 0 avisos e 0 erros | Código igual à versão verificada (só mudou a ordem dos métodos e o uso de `IReadOnlyList`). Em aberto para o Módulo 5: hierarquia obrigatória ou rebaixamento na promoção, e grupo × idade |

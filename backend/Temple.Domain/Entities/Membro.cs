@@ -1,3 +1,4 @@
+using Temple.Domain.Enums;
 using Temple.Domain.ValueObjects;
 
 namespace Temple.Domain.Entities;
@@ -5,6 +6,7 @@ namespace Temple.Domain.Entities;
 public sealed class Membro
 {
     private const int TamanhoMaximoNome = 150;
+    private readonly List<HistoricoCargo> _historicoCargos = [];
 
     public Guid Id { get; private set; }
     public int Matricula { get; private set; }
@@ -12,10 +14,14 @@ public sealed class Membro
     public DateOnly DataNascimento { get; private set; }
     public Endereco Endereco { get; private set; }
 
+    public TipoCargo CargoAtual { get; private set; }
+    public GrupoMembro? Grupo { get; private set; }
+
     public Guid IgrejaId { get; private set; }
     public Igreja Igreja { get; private set; }
+    public IReadOnlyList<HistoricoCargo> HistoricoCargos => _historicoCargos.AsReadOnly();
 
-    public Membro(string nome, DateOnly dataNascimento, Endereco endereco, Igreja igreja)
+    public Membro(string nome, DateOnly dataNascimento, Endereco endereco, Igreja igreja, TipoCargo cargoAtual, GrupoMembro? grupo )
     {
         ArgumentNullException.ThrowIfNull(endereco);
         ArgumentNullException.ThrowIfNull(igreja);
@@ -32,7 +38,37 @@ public sealed class Membro
         Endereco = endereco;
         IgrejaId = igreja.Id;
         Igreja = igreja;
+        CargoAtual = ValidarCargo(cargoAtual);
+        Grupo = ValidarGrupo(grupo);
     }
+
+        public void AlterarGrupo(GrupoMembro? novoGrupo)
+    {
+        Grupo = ValidarGrupo(novoGrupo);
+    }
+
+    public void PromoverCargo(TipoCargo novoCargo, DateOnly dataPromocao)
+    {
+        ValidarCargo(novoCargo);
+
+        if (novoCargo == CargoAtual)
+        {
+            throw new InvalidOperationException("O novo cargo deve ser diferente do cargo atual.");
+        }
+
+        DateOnly hoje = DateOnly.FromDateTime(DateTime.Today);
+
+        if (dataPromocao > hoje)
+        {
+            throw new ArgumentOutOfRangeException(nameof(dataPromocao), "A data da promoção não pode estar no futuro.");
+        }
+
+        HistoricoCargo historico = new(Id, CargoAtual, novoCargo, dataPromocao);
+        _historicoCargos.Add(historico);
+
+        CargoAtual = novoCargo;
+    }
+
 
     public int CalcularIdade(DateOnly dataReferencia)
     {
@@ -70,6 +106,27 @@ public sealed class Membro
 
         return nomeLimpo;
     }
+
+        private static TipoCargo ValidarCargo(TipoCargo cargo)
+    {
+        if (!Enum.IsDefined(cargo))
+        {
+            throw new ArgumentOutOfRangeException(nameof(cargo), "Cargo inválido.");
+        }
+
+        return cargo;
+    }
+
+    private static GrupoMembro? ValidarGrupo(GrupoMembro? grupo)
+    {
+        if (grupo is GrupoMembro valor && !Enum.IsDefined(valor))
+        {
+            throw new ArgumentOutOfRangeException(nameof(grupo), "Grupo inválido.");
+        }
+
+        return grupo;
+    }
+
 
     private static DateOnly ValidarDataNascimento(DateOnly dataNascimento)
     {
