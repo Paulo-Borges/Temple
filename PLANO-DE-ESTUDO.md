@@ -12,7 +12,7 @@
 |---|---|:---:|:---:|:---:|
 | 0 | Ambiente | 2 | 2 | ✅ |
 | 1 | Fundamentos do Backend | 4 | 4 | ✅ |
-| 2 | Persistência (EF Core + SQL Server) | 3 | 1 | 🔄 |
+| 2 | Persistência (EF Core + SQL Server) | 3 | 2 | 🔄 |
 | 3 | Application e API | 4 | 0 | ⬜ |
 | 4 | Segurança | 3 | 0 | ⬜ |
 | 5 | Regras de Negócio | 3 | 0 | ⬜ |
@@ -21,7 +21,7 @@
 | 7 | Integração Front + API | 4 | 0 | ⬜ |
 | 8 | Funcionalidades Finais | 4 | 0 | ⬜ |
 | 9 | Qualidade | 2 | 0 | ⬜ |
-| **Total** | | **39** | **7** | **18%** |
+| **Total** | | **39** | **8** | **21%** |
 
 ---
 
@@ -114,7 +114,7 @@ Temple/
 | # | Aula | Status |
 |---|---|:---:|
 | 2.1 | `DbContext` e `IEntityTypeConfiguration<T>` | ✅ |
-| 2.2 | Relacionamento matriz ↔ filiais | ⬜ |
+| 2.2 | Relacionamento matriz ↔ filiais | ✅ |
 | 2.3 | Migrations e seed (cargos e Pastor inicial) | ⬜ |
 
 ### Módulo 3: Application e API
@@ -193,3 +193,4 @@ Temple/
 | 2026-11-13 | 1.3 | Value object `Endereco` (`sealed record`, imutável, só `get`, validação de UF e CEP). Entidade `Membro` (matrícula `int` gerada pelo banco, `IgrejaId` obrigatório, `CalcularIdade`, `AlterarNome`, `AlterarEndereco`). `Endereco` adicionado à `Igreja`. Build com 0 avisos e 0 erros | Regra nova: não cadastrar membro em igreja inativa. Removida uma linha `Ativa = ativa` duplicada no construtor da `Igreja`. Para a Aula 2.1: matrícula única no sistema inteiro (índice único). Em aberto: o que acontece com os membros quando a igreja é desativada (Módulo 5) |
 | 2026-11-15 | 1.4 | Enums `TipoCargo`, `Perfil`, `GrupoMembro` e `TipoCertificado` (valores explícitos começando em 1). Entidade `HistoricoCargo` com construtor `internal`. `Membro` ganhou `CargoAtual`, `Grupo`, `HistoricoCargos`, `PromoverCargo` e `AlterarGrupo`, com validação por `Enum.IsDefined`. Build com 0 avisos e 0 erros | Código igual à versão verificada (só mudou a ordem dos métodos e o uso de `IReadOnlyList`). Em aberto para o Módulo 5: hierarquia obrigatória ou rebaixamento na promoção, e grupo × idade |
 | 2026-11-16 | 2.1 | EF Core SqlServer 10.0.15 na Infrastructure. `TempleDbContext` com `DbSet => Set<T>()` e `ApplyConfigurationsFromAssembly`. Configurações de Igreja, Membro e HistoricoCargo, com o `Endereco` como complex type (configuração reaproveitada). Matrícula `IDENTITY` com índice único, CNPJ com índice único, FK Membro→Igreja `Restrict` e Histórico `Cascade`. Build com 0 avisos e 0 erros | O EF não passa complex type por construtor, então cada entidade ganhou um construtor privado só para o EF, com `#pragma CS8618` localizado (decisão do usuário). Removida a navegação `Membro.Igreja`, que agora guarda só o `IgrejaId`. Testado no LocalDB (criação, gravação e leitura OK) |
+| 2026-11-16 | 2.2 | Auto-relacionamento configurado de forma explícita: `HasOne(IgrejaMatriz).WithMany(Filiais).HasForeignKey(IgrejaMatrizId)`, `IsRequired(false)`, `OnDelete(Restrict)` e `HasField("_filiais")`. Build com 0 avisos e 0 erros | Testado no LocalDB: o SQL Server recusa `Cascade` em auto-referência (*cycles or multiple cascade paths*); o `Restrict` bloqueia apagar matriz com filiais; sem `Include`, `Filiais` vem vazia (armadilha); o `EhMatriz` funciona sem `Include` porque usa o `IgrejaMatrizId`. A regra dos 2 níveis é garantida só pelo Domain |

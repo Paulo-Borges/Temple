@@ -40,5 +40,15 @@ internal sealed class IgrejaConfiguration : IEntityTypeConfiguration<Igreja>
         builder.ComplexProperty(igreja => igreja.Endereco, EnderecoConfiguration.Configurar);
 
         builder.Ignore(igreja => igreja.EhMatriz);
+
+                builder.HasOne(igreja => igreja.IgrejaMatriz)
+            .WithMany(igreja => igreja.Filiais)
+            .HasForeignKey(igreja => igreja.IgrejaMatrizId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Navigation(igreja => igreja.Filiais)
+            .HasField("_filiais");
+
     }
 }
