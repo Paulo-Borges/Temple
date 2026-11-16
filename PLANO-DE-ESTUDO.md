@@ -12,7 +12,7 @@
 |---|---|:---:|:---:|:---:|
 | 0 | Ambiente | 2 | 2 | ✅ |
 | 1 | Fundamentos do Backend | 4 | 4 | ✅ |
-| 2 | Persistência (EF Core + SQL Server) | 3 | 2 | 🔄 |
+| 2 | Persistência (EF Core + SQL Server) | 3 | 3 | ✅ |
 | 3 | Application e API | 4 | 0 | ⬜ |
 | 4 | Segurança | 3 | 0 | ⬜ |
 | 5 | Regras de Negócio | 3 | 0 | ⬜ |
@@ -21,7 +21,7 @@
 | 7 | Integração Front + API | 4 | 0 | ⬜ |
 | 8 | Funcionalidades Finais | 4 | 0 | ⬜ |
 | 9 | Qualidade | 2 | 0 | ⬜ |
-| **Total** | | **39** | **8** | **21%** |
+| **Total** | | **39** | **9** | **23%** |
 
 ---
 
@@ -115,7 +115,7 @@ Temple/
 |---|---|:---:|
 | 2.1 | `DbContext` e `IEntityTypeConfiguration<T>` | ✅ |
 | 2.2 | Relacionamento matriz ↔ filiais | ✅ |
-| 2.3 | Migrations e seed (cargos e Pastor inicial) | ⬜ |
+| 2.3 | Migrations e seed (matriz de exemplo só em dev; cargos viraram enums e o Pastor vai para o Módulo 4) | ✅ |
 
 ### Módulo 3: Application e API
 | # | Aula | Status |
@@ -194,3 +194,4 @@ Temple/
 | 2026-11-15 | 1.4 | Enums `TipoCargo`, `Perfil`, `GrupoMembro` e `TipoCertificado` (valores explícitos começando em 1). Entidade `HistoricoCargo` com construtor `internal`. `Membro` ganhou `CargoAtual`, `Grupo`, `HistoricoCargos`, `PromoverCargo` e `AlterarGrupo`, com validação por `Enum.IsDefined`. Build com 0 avisos e 0 erros | Código igual à versão verificada (só mudou a ordem dos métodos e o uso de `IReadOnlyList`). Em aberto para o Módulo 5: hierarquia obrigatória ou rebaixamento na promoção, e grupo × idade |
 | 2026-11-16 | 2.1 | EF Core SqlServer 10.0.15 na Infrastructure. `TempleDbContext` com `DbSet => Set<T>()` e `ApplyConfigurationsFromAssembly`. Configurações de Igreja, Membro e HistoricoCargo, com o `Endereco` como complex type (configuração reaproveitada). Matrícula `IDENTITY` com índice único, CNPJ com índice único, FK Membro→Igreja `Restrict` e Histórico `Cascade`. Build com 0 avisos e 0 erros | O EF não passa complex type por construtor, então cada entidade ganhou um construtor privado só para o EF, com `#pragma CS8618` localizado (decisão do usuário). Removida a navegação `Membro.Igreja`, que agora guarda só o `IgrejaId`. Testado no LocalDB (criação, gravação e leitura OK) |
 | 2026-11-16 | 2.2 | Auto-relacionamento configurado de forma explícita: `HasOne(IgrejaMatriz).WithMany(Filiais).HasForeignKey(IgrejaMatrizId)`, `IsRequired(false)`, `OnDelete(Restrict)` e `HasField("_filiais")`. Build com 0 avisos e 0 erros | Testado no LocalDB: o SQL Server recusa `Cascade` em auto-referência (*cycles or multiple cascade paths*); o `Restrict` bloqueia apagar matriz com filiais; sem `Include`, `Filiais` vem vazia (armadilha); o `EhMatriz` funciona sem `Include` porque usa o `IgrejaMatrizId`. A regra dos 2 níveis é garantida só pelo Domain |
+| 2026-11-16 | 2.3 | `dotnet-ef` atualizado para 10.0.15. Pacote `EntityFrameworkCore.Design` na Api. Connection string `TempleDb` no `appsettings.Development.json`. `AddDbContext` no `Program.cs`, com a validação da connection string sem `!`/`??`. Seed idempotente `DadosDeDesenvolvimento` (`UseSeeding`/`UseAsyncSeeding`, só em Development). Migration `CriacaoInicial` aplicada: banco `TempleDb` criado no LocalDB, com a "Igreja Sede Exemplo" | O `Program.cs` foi digitado mas não estava salvo no primeiro build (dica: Auto Save). Na Aula 3.2, mover o registro para `AddInfrastructure()` |
