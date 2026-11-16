@@ -12,7 +12,7 @@
 |---|---|:---:|:---:|:---:|
 | 0 | Ambiente | 2 | 2 | ✅ |
 | 1 | Fundamentos do Backend | 4 | 4 | ✅ |
-| 2 | Persistência (EF Core + SQL Server) | 3 | 0 | ⬜ |
+| 2 | Persistência (EF Core + SQL Server) | 3 | 1 | 🔄 |
 | 3 | Application e API | 4 | 0 | ⬜ |
 | 4 | Segurança | 3 | 0 | ⬜ |
 | 5 | Regras de Negócio | 3 | 0 | ⬜ |
@@ -21,7 +21,7 @@
 | 7 | Integração Front + API | 4 | 0 | ⬜ |
 | 8 | Funcionalidades Finais | 4 | 0 | ⬜ |
 | 9 | Qualidade | 2 | 0 | ⬜ |
-| **Total** | | **39** | **6** | **15%** |
+| **Total** | | **39** | **7** | **18%** |
 
 ---
 
@@ -31,7 +31,7 @@
 |---|---|
 | Backend | C# + .NET 10 (LTS), ASP.NET Core Web API |
 | Arquitetura | Clean Architecture (Domain, Application, Infrastructure, Api, Tests) |
-| Banco de dados | SQL Server + Entity Framework Core 10 (dev: LocalDB `(localdb)\MSSQLLocalDB`) |
+| Banco de dados | SQL Server + Entity Framework Core **10.0.x** (não usar o 11, que exige .NET 11) (dev: LocalDB `(localdb)\MSSQLLocalDB`) |
 | Autenticação | ASP.NET Identity + JWT + Roles/Policies |
 | Validação | FluentValidation |
 | PDF | QuestPDF |
@@ -113,7 +113,7 @@ Temple/
 ### Módulo 2: Persistência
 | # | Aula | Status |
 |---|---|:---:|
-| 2.1 | `DbContext` e `IEntityTypeConfiguration<T>` | ⬜ |
+| 2.1 | `DbContext` e `IEntityTypeConfiguration<T>` | ✅ |
 | 2.2 | Relacionamento matriz ↔ filiais | ⬜ |
 | 2.3 | Migrations e seed (cargos e Pastor inicial) | ⬜ |
 
@@ -192,3 +192,4 @@ Temple/
 | 2026-11-13 | 1.2 | Entidade `Igreja` em `Temple.Domain/Entities`: `private set`, construtor privado com validações, `CriarMatriz` (estático) e `CriarFilial` (só a partir da matriz), `Ativar`/`Desativar`. Build com 0 avisos e 0 erros | Arquivo criado primeiro em `backend/Domain/`, fora do projeto, e por isso não compilava: movido. Removido o parâmetro `Igreja matriz` de `CriarFilial`, que sobrava porque a matriz já é o `this`. Pendente: dígitos verificadores do CNPJ (value object) e `TimeProvider` (Módulo 9) |
 | 2026-11-13 | 1.3 | Value object `Endereco` (`sealed record`, imutável, só `get`, validação de UF e CEP). Entidade `Membro` (matrícula `int` gerada pelo banco, `IgrejaId` obrigatório, `CalcularIdade`, `AlterarNome`, `AlterarEndereco`). `Endereco` adicionado à `Igreja`. Build com 0 avisos e 0 erros | Regra nova: não cadastrar membro em igreja inativa. Removida uma linha `Ativa = ativa` duplicada no construtor da `Igreja`. Para a Aula 2.1: matrícula única no sistema inteiro (índice único). Em aberto: o que acontece com os membros quando a igreja é desativada (Módulo 5) |
 | 2026-11-15 | 1.4 | Enums `TipoCargo`, `Perfil`, `GrupoMembro` e `TipoCertificado` (valores explícitos começando em 1). Entidade `HistoricoCargo` com construtor `internal`. `Membro` ganhou `CargoAtual`, `Grupo`, `HistoricoCargos`, `PromoverCargo` e `AlterarGrupo`, com validação por `Enum.IsDefined`. Build com 0 avisos e 0 erros | Código igual à versão verificada (só mudou a ordem dos métodos e o uso de `IReadOnlyList`). Em aberto para o Módulo 5: hierarquia obrigatória ou rebaixamento na promoção, e grupo × idade |
+| 2026-11-16 | 2.1 | EF Core SqlServer 10.0.15 na Infrastructure. `TempleDbContext` com `DbSet => Set<T>()` e `ApplyConfigurationsFromAssembly`. Configurações de Igreja, Membro e HistoricoCargo, com o `Endereco` como complex type (configuração reaproveitada). Matrícula `IDENTITY` com índice único, CNPJ com índice único, FK Membro→Igreja `Restrict` e Histórico `Cascade`. Build com 0 avisos e 0 erros | O EF não passa complex type por construtor, então cada entidade ganhou um construtor privado só para o EF, com `#pragma CS8618` localizado (decisão do usuário). Removida a navegação `Membro.Igreja`, que agora guarda só o `IgrejaId`. Testado no LocalDB (criação, gravação e leitura OK) |

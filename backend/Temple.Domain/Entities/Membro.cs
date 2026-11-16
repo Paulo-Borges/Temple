@@ -18,8 +18,25 @@ public sealed class Membro
     public GrupoMembro? Grupo { get; private set; }
 
     public Guid IgrejaId { get; private set; }
-    public Igreja Igreja { get; private set; }
+    // public Igreja Igreja { get; private set; }
     public IReadOnlyList<HistoricoCargo> HistoricoCargos => _historicoCargos.AsReadOnly();
+
+    // Construtor usado apenas pelo EF Core ao ler do banco.
+    // O Endereco é preenchido pelo EF logo após a criação do objeto.
+#pragma warning disable CS8618
+    private Membro(Guid id, int matricula, string nome, DateOnly dataNascimento, TipoCargo cargoAtual, GrupoMembro? grupo, Guid igrejaId)
+#pragma warning restore CS8618
+    {
+        Id = id;
+        Matricula = matricula;
+        Nome = nome;
+        DataNascimento = dataNascimento;
+        CargoAtual = cargoAtual;
+        Grupo = grupo;
+        IgrejaId = igrejaId;
+    }
+
+
 
     public Membro(string nome, DateOnly dataNascimento, Endereco endereco, Igreja igreja, TipoCargo cargoAtual, GrupoMembro? grupo )
     {
@@ -37,7 +54,7 @@ public sealed class Membro
         DataNascimento = ValidarDataNascimento(dataNascimento);
         Endereco = endereco;
         IgrejaId = igreja.Id;
-        Igreja = igreja;
+        // Igreja = igreja;
         CargoAtual = ValidarCargo(cargoAtual);
         Grupo = ValidarGrupo(grupo);
     }

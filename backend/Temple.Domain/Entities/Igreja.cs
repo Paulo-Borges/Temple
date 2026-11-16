@@ -30,6 +30,22 @@ public sealed class Igreja
     // indica se a igreja é matriz
     public bool EhMatriz => IgrejaMatrizId == null;
 
+        // Construtor usado apenas pelo EF Core ao ler do banco.
+    // O Endereco é preenchido pelo EF logo após a criação do objeto.
+#pragma warning disable CS8618
+    private Igreja(Guid id, string nome, string cnpj, string telefone, DateOnly dataFundacao, bool ativa, Guid? igrejaMatrizId)
+#pragma warning restore CS8618
+    {
+        Id = id;
+        Nome = nome;
+        Cnpj = cnpj;
+        Telefone = telefone;
+        DataFundacao = dataFundacao;
+        Ativa = ativa;
+        IgrejaMatrizId = igrejaMatrizId;
+    }
+
+
 
     // construtor privado da igreja
 
