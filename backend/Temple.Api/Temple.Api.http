@@ -1,6 +1,72 @@
-@Temple.Api_HostAddress = http://localhost:5022
+@baseUrl = http://localhost:5022
 
-GET {{Temple.Api_HostAddress}}/weatherforecast/
-Accept: application/json
+### Criar matriz
+# @name criarMatriz
+POST {{baseUrl}}/api/igrejas
+Content-Type: application/json
 
-###
+{
+  "nome": "Igreja Sede Teste",
+  "cnpj": "11.222.333/0001-81",
+  "telefone": "(11) 3333-4444",
+  "dataFundacao": "1990-01-01",
+  "ativa": true,
+  "endereco": {
+    "logradouro": "Rua das Flores",
+    "numero": "10",
+    "complemento": null,
+    "bairro": "Centro",
+    "cidade": "São Paulo",
+    "uf": "SP",
+    "cep": "01001-000"
+  }
+}
+
+### Criar filial da matriz criada acima
+POST {{baseUrl}}/api/igrejas/{{criarMatriz.response.body.$.id}}/filiais
+Content-Type: application/json
+
+{
+  "nome": "Igreja Filial Teste",
+  "cnpj": "11.222.333/0002-62",
+  "telefone": "(11) 3333-5555",
+  "dataFundacao": "2005-06-15",
+  "ativa": true,
+  "endereco": {
+    "logradouro": "Avenida Brasil",
+    "numero": "200",
+    "complemento": "Sala 3",
+    "bairro": "Jardim América",
+    "cidade": "São Paulo",
+    "uf": "SP",
+    "cep": "01430-000"
+  }
+}
+
+### Obter a matriz criada acima
+GET {{baseUrl}}/api/igrejas/{{criarMatriz.response.body.$.id}}
+
+### Obter uma igreja que não existe (404)
+GET {{baseUrl}}/api/igrejas/00000000-0000-0000-0000-000000000001
+
+### Campos inválidos (400)
+POST {{baseUrl}}/api/igrejas
+Content-Type: application/json
+
+{
+  "nome": "",
+  "cnpj": "123",
+  "telefone": "abc",
+  "dataFundacao": "2999-01-01",
+  "ativa": true,
+  "endereco": {
+    "logradouro": "",
+    "numero": "1",
+    "complemento": null,
+    "bairro": "Centro",
+    "cidade": "São Paulo",
+    "uf": "XX",
+    "cep": "1234"
+  }
+}
+
