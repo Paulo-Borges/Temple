@@ -1,11 +1,12 @@
 using Temple.Domain.Enums;
+using Temple.Domain.Exceptions;
 using Temple.Domain.ValueObjects;
 
 namespace Temple.Domain.Entities;
 
 public sealed class Membro
 {
-    private const int TamanhoMaximoNome = 150;
+    public const int TamanhoMaximoNome = 150;
     private readonly List<HistoricoCargo> _historicoCargos = [];
 
     public Guid Id { get; private set; }
@@ -46,7 +47,7 @@ public sealed class Membro
     
         if (!igreja.Ativa)
         {
-            throw new InvalidOperationException("Não é possível cadastrar membro em uma igreja inativa.");
+            throw new DomainException("Não é possível cadastrar membro em uma igreja inativa.");
         }
         
         Id = Guid.NewGuid();
@@ -70,14 +71,14 @@ public sealed class Membro
 
         if (novoCargo == CargoAtual)
         {
-            throw new InvalidOperationException("O novo cargo deve ser diferente do cargo atual.");
+            throw new DomainException("O novo cargo deve ser diferente do cargo atual.");
         }
 
         DateOnly hoje = DateOnly.FromDateTime(DateTime.Today);
 
         if (dataPromocao > hoje)
         {
-            throw new ArgumentOutOfRangeException(nameof(dataPromocao), "A data da promoção não pode estar no futuro.");
+            throw new DomainException("A data da promoção não pode estar no futuro.");
         }
 
         HistoricoCargo historico = new(Id, CargoAtual, novoCargo, dataPromocao);
@@ -112,13 +113,16 @@ public sealed class Membro
 
     private static string ValidarNome(string nome)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(nome);
+        if (string.IsNullOrWhiteSpace(nome))
+        {
+            throw new DomainException("O nome é obrigatório.");
+        }
 
         string nomeLimpo = nome.Trim();
 
         if (nomeLimpo.Length > TamanhoMaximoNome)
         {
-            throw new ArgumentException($"O nome deve ter no máximo {TamanhoMaximoNome} caracteres.", nameof(nome));
+            throw new DomainException($"O nome deve ter no máximo {TamanhoMaximoNome} caracteres.");
         }
 
         return nomeLimpo;
@@ -128,7 +132,7 @@ public sealed class Membro
     {
         if (!Enum.IsDefined(cargo))
         {
-            throw new ArgumentOutOfRangeException(nameof(cargo), "Cargo inválido.");
+            throw new DomainException("Cargo inválido.");
         }
 
         return cargo;
@@ -138,7 +142,7 @@ public sealed class Membro
     {
         if (grupo is GrupoMembro valor && !Enum.IsDefined(valor))
         {
-            throw new ArgumentOutOfRangeException(nameof(grupo), "Grupo inválido.");
+            throw new DomainException("Grupo inválido.");
         }
 
         return grupo;
@@ -151,7 +155,7 @@ public sealed class Membro
 
         if (dataNascimento > hoje)
         {
-            throw new ArgumentOutOfRangeException(nameof(dataNascimento), "A data de nascimento não pode estar no futuro.");
+            throw new DomainException("A data de nascimento não pode estar no futuro.");
         }
 
         return dataNascimento;

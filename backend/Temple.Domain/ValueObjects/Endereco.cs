@@ -1,12 +1,14 @@
+using Temple.Domain.Exceptions;
+
 namespace Temple.Domain.ValueObjects;
 
 public sealed record Endereco
 {
-    private const int TamanhoMaximoLogradouro = 150;
-    private const int TamanhoMaximoNumero = 10;
-    private const int TamanhoMaximoComplemento = 100;
-    private const int TamanhoMaximoBairro = 100;
-    private const int TamanhoMaximoCidade = 100;
+    public const int TamanhoMaximoLogradouro = 150;
+    public const int TamanhoMaximoNumero = 10;
+    public const int TamanhoMaximoComplemento = 100;
+    public const int TamanhoMaximoBairro = 100;
+    public const int TamanhoMaximoCidade = 100;
 
     private static readonly HashSet<string> UfsValidas =
     [
@@ -23,6 +25,16 @@ public sealed record Endereco
     public string Uf { get; }
     public string Cep { get; }
 
+    public static bool EhUfValida(string uf)
+    {
+        if (string.IsNullOrWhiteSpace(uf))
+        {
+            return false;
+        }
+
+        return UfsValidas.Contains(uf.Trim().ToUpperInvariant());
+    }
+
     public Endereco(string logradouro, string numero, string? complemento, string bairro, string cidade, string uf, string cep)
     {
         Logradouro = ValidarTexto(logradouro, TamanhoMaximoLogradouro, nameof(logradouro));
@@ -36,13 +48,16 @@ public sealed record Endereco
 
     private static string ValidarTexto(string valor, int tamanhoMaximo, string nomeDoCampo)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(valor, nomeDoCampo);
+        if (string.IsNullOrWhiteSpace(valor))
+        {
+            throw new DomainException($"O campo {nomeDoCampo} é obrigatório.");
+        }
 
         string valorLimpo = valor.Trim();
 
         if (valorLimpo.Length > tamanhoMaximo)
         {
-            throw new ArgumentException($"O campo deve ter no máximo {tamanhoMaximo} caracteres.", nomeDoCampo);
+            throw new DomainException($"O campo {nomeDoCampo} deve ter no máximo {tamanhoMaximo} caracteres.");
         }
 
         return valorLimpo;
@@ -60,13 +75,16 @@ public sealed record Endereco
 
     private static string ValidarUf(string uf)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(uf);
+        if (string.IsNullOrWhiteSpace(uf))
+        {
+            throw new DomainException("A UF é obrigatória.");
+        }
 
         string ufLimpa = uf.Trim().ToUpperInvariant();
 
         if (!UfsValidas.Contains(ufLimpa))
         {
-            throw new ArgumentException($"A UF '{ufLimpa}' não é válida.", nameof(uf));
+            throw new DomainException($"A UF '{ufLimpa}' não é válida.");
         }
 
         return ufLimpa;
@@ -74,7 +92,10 @@ public sealed record Endereco
 
     private static string ValidarCep(string cep)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(cep);
+        if (string.IsNullOrWhiteSpace(cep))
+        {
+            throw new DomainException("O CEP é obrigatório.");
+        }
 
         string semMascara = cep.Trim()
             .Replace("-", string.Empty, StringComparison.Ordinal)
@@ -82,7 +103,7 @@ public sealed record Endereco
 
         if (semMascara.Length != 8 || !semMascara.All(char.IsAsciiDigit))
         {
-            throw new ArgumentException("O CEP deve ter 8 números.", nameof(cep));
+            throw new DomainException("O CEP deve ter 8 números.");
         }
 
         return semMascara;

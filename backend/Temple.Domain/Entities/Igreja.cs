@@ -1,3 +1,4 @@
+using Temple.Domain.Exceptions;
 using Temple.Domain.ValueObjects;
 // namespace e classe  
 namespace Temple.Domain.Entities;
@@ -6,7 +7,7 @@ public sealed class Igreja
 {
 
     // constante e lista privada para filiais
-    private const int TamanhoMaximoNome = 150;
+    public const int TamanhoMaximoNome = 150;
     private readonly List<Igreja> _filiais = [];
 
     // propriedades públicas da igreja
@@ -75,7 +76,7 @@ public sealed class Igreja
     {
          if (!EhMatriz)
         {
-            throw new InvalidOperationException("Uma filial não pode ter filiais.");
+            throw new DomainException("Uma filial não pode ter filiais.");
         }
 
         Igreja filial = new(nome, cnpj, telefone, dataFundacao, ativa, endereco)
@@ -110,13 +111,16 @@ public sealed class Igreja
     // métodos de validação privadas.
         private static string ValidarNome(string nome)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(nome);
+        if (string.IsNullOrWhiteSpace(nome))
+        {
+            throw new DomainException("O nome é obrigatório.");
+        }
 
         string nomeLimpo = nome.Trim();
 
         if (nomeLimpo.Length > TamanhoMaximoNome)
         {
-            throw new ArgumentException($"O nome deve ter no máximo {TamanhoMaximoNome} caracteres.", nameof(nome));
+            throw new DomainException($"O nome deve ter no máximo {TamanhoMaximoNome} caracteres.");
         }
 
         return nomeLimpo;
@@ -124,7 +128,10 @@ public sealed class Igreja
 
     private static string ValidarCnpj(string cnpj)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(cnpj);
+        if (string.IsNullOrWhiteSpace(cnpj))
+        {
+            throw new DomainException("O CNPJ é obrigatório.");
+        }
 
         string semMascara = cnpj.Trim()
             .Replace(".", string.Empty, StringComparison.Ordinal)
@@ -134,20 +141,20 @@ public sealed class Igreja
 
         if (semMascara.Length != 14)
         {
-            throw new ArgumentException("O CNPJ deve ter 14 caracteres.", nameof(cnpj));
+            throw new DomainException("O CNPJ deve ter 14 caracteres.");
         }
 
         for (int i = 0; i < 12; i++)
         {
             if (!char.IsAsciiDigit(semMascara[i]) && !char.IsAsciiLetterUpper(semMascara[i]))
             {
-                throw new ArgumentException("Os 12 primeiros caracteres do CNPJ devem ser letras ou números.", nameof(cnpj));
+                throw new DomainException("Os 12 primeiros caracteres do CNPJ devem ser letras ou números.");
             }
         }
 
         if (!char.IsAsciiDigit(semMascara[12]) || !char.IsAsciiDigit(semMascara[13]))
         {
-            throw new ArgumentException("Os 2 últimos caracteres do CNPJ (dígitos verificadores) devem ser números.", nameof(cnpj));
+            throw new DomainException("Os 2 últimos caracteres do CNPJ (dígitos verificadores) devem ser números.");
         }
 
         return semMascara;
@@ -155,7 +162,10 @@ public sealed class Igreja
 
     private static string ValidarTelefone(string telefone)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(telefone);
+        if (string.IsNullOrWhiteSpace(telefone))
+        {
+            throw new DomainException("O telefone é obrigatório.");
+        }
 
         string semMascara = telefone.Trim()
             .Replace("(", string.Empty, StringComparison.Ordinal)
@@ -165,12 +175,12 @@ public sealed class Igreja
 
         if (!semMascara.All(char.IsAsciiDigit))
         {
-            throw new ArgumentException("O telefone deve conter apenas números.", nameof(telefone));
+            throw new DomainException("O telefone deve conter apenas números.");
         }
 
         if (semMascara.Length is not (10 or 11))
         {
-            throw new ArgumentException("O telefone deve ter 10 ou 11 dígitos (com DDD).", nameof(telefone));
+            throw new DomainException("O telefone deve ter 10 ou 11 dígitos (com DDD).");
         }
 
         return semMascara;
@@ -182,7 +192,7 @@ public sealed class Igreja
 
         if (dataFundacao > hoje)
         {
-            throw new ArgumentOutOfRangeException(nameof(dataFundacao), "A data de fundação não pode estar no futuro.");
+            throw new DomainException("A data de fundação não pode estar no futuro.");
         }
 
         return dataFundacao;

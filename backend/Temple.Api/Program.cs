@@ -1,6 +1,5 @@
-using Microsoft.EntityFrameworkCore;
-using Temple.Infrastructure.Persistence;
-using Temple.Infrastructure.Persistence.Seed;
+using Temple.Application;
+using Temple.Infrastructure;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -12,16 +11,9 @@ if (string.IsNullOrWhiteSpace(connectionString))
     throw new InvalidOperationException("A connection string 'TempleDb' não foi configurada.");
 }
 
-builder.Services.AddDbContext<TempleDbContext>(options =>
-{
-    options.UseSqlServer(connectionString);
+builder.Services.AddApplication();
+builder.Services.AddInfrastructure(connectionString, builder.Environment.IsDevelopment());
 
-    if (builder.Environment.IsDevelopment())
-    {
-        options.UseSeeding(DadosDeDesenvolvimento.Semear);
-        options.UseAsyncSeeding(DadosDeDesenvolvimento.SemearAsync);
-    }
-});
 
 
 // Add services to the container.
