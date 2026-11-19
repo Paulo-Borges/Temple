@@ -32,6 +32,10 @@ internal sealed class MembroConfiguration : IEntityTypeConfiguration<Membro>
             .IsRequired();
 
         builder.Property(membro => membro.Grupo);
+        
+        builder.Property(membro => membro.Ativo)
+            .IsRequired();
+
 
         builder.ComplexProperty(membro => membro.Endereco, EnderecoConfiguration.Configurar);
 

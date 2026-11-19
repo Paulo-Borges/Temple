@@ -11,4 +11,5 @@ public sealed record MembroResponse(
     EnderecoDto Endereco,
     Guid IgrejaId,
     TipoCargo CargoAtual,
-    GrupoMembro? Grupo);
+    GrupoMembro? Grupo,
+    bool Ativo);

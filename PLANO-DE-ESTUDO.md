@@ -13,7 +13,7 @@
 | 0 | Ambiente | 2 | 2 | ✅ |
 | 1 | Fundamentos do Backend | 4 | 4 | ✅ |
 | 2 | Persistência (EF Core + SQL Server) | 3 | 3 | ✅ |
-| 3 | Application e API | 5 | 4 | 🔄 |
+| 3 | Application e API | 5 | 5 | ✅ |
 | 4 | Segurança | 3 | 0 | ⬜ |
 | 5 | Regras de Negócio | 3 | 0 | ⬜ |
 | 5B | Financeiro | 6 | 0 | ⬜ |
@@ -21,7 +21,7 @@
 | 7 | Integração Front + API | 4 | 0 | ⬜ |
 | 8 | Funcionalidades Finais | 4 | 0 | ⬜ |
 | 9 | Qualidade | 2 | 0 | ⬜ |
-| **Total** | | **40** | **13** | **33%** |
+| **Total** | | **40** | **14** | **35%** |
 
 ---
 
@@ -124,7 +124,7 @@ Temple/
 | 3.2 | Services, injeção de dependência e FluentValidation | ✅ |
 | 3.3 | Controllers REST, Swagger/OpenAPI e `ProblemDetails` | ✅ |
 | 3.4A | CRUD de Igrejas: listar, editar, ativar e desativar | ✅ |
-| 3.4B | CRUD de Membros | ⬜ |
+| 3.4B | CRUD de Membros | ✅ |
 
 ### Módulo 4: Segurança
 | # | Aula | Status |
@@ -200,3 +200,4 @@ Temple/
 | 2026-11-17 | 3.2 | `DomainException` no Domain: 25 trocas de `throw` em `Igreja`, `Membro` e `Endereco` (os `ThrowIfNull` ficaram). Constantes de tamanho públicas e `Endereco.EhUfValida`. Na Application: `NaoEncontradoException` e `ConflitoException`, as interfaces `IIgrejaRepository` e `IUnitOfWork`, a FluentValidation 12.2.0 (pt-BR, `CascadeMode.Stop`) com `EnderecoDtoValidator` e `CriarIgrejaRequestValidator`, o `IgrejaService` (criar matriz e filial, obter por Id) e o `AddApplication()`. Na Infrastructure: `IgrejaRepository`, `UnitOfWork` (`internal`) e o `AddInfrastructure()`, que recebeu o `AddDbContext`. `Program.cs` só liga as camadas. Build com 0 avisos e 0 erros; a Api sobe em Development com o DI validado. Sem migration nova | Tropeços: texto da tabela colado como código (linha 159 da `Igreja`), arquivo `ConflitosException.cs` com nome errado e Api rodando, que travou a DLL no build (MSB3027). A Parte A foi aplicada pelo Claude a pedido. Próxima: 3.3, com o handler global e ProblemDetails |
 | 2026-11-17 | 3.3 | `IgrejasController` com `[ApiController]` e 3 rotas: `POST /api/igrejas` (matriz, 201 + Location), `POST /api/igrejas/{matrizId:guid}/filiais` e `GET /api/igrejas/{id:guid}`. `TratadorGlobalDeExcecoes` (`IExceptionHandler` + `IProblemDetailsService`): Validation → 400 (erros em camelCase), Domain → 422, NaoEncontrado → 404, Conflito → 409, outras → 500. `AddProblemDetails`, `UseExceptionHandler` e `UseStatusCodePages`. JSON com `RespectNullableAnnotations`, `RespectRequiredConstructorParameters` e `JsonStringEnumConverter`. Swagger UI (Swashbuckle.AspNetCore.SwaggerUI 10.3.1) sobre o OpenAPI nativo, só em Development. `Temple.Api.http` com `@baseUrl` e requisição nomeada. Template `WeatherForecast` removido. Testado pelo Swagger no `TempleDb`: matriz e filial com 201 | Decisões: Swagger UI, `DomainException` → 422 e filial como sub-recurso da matriz. Tropeços: `});;` no `Program.cs` e o corpo da filial enviado à rota de matriz no Swagger (virou matriz; lição: em REST, a URL carrega significado). O `complemento` precisa vir no JSON, nem que seja `null`. Próxima: 3.4, CRUD de Igrejas e Membros |
 | 2026-11-19 | 3.4A | A 3.4 foi dividida em 3.4A (Igrejas) e 3.4B (Membros). Rotas novas: `GET /api/igrejas` (por nome, com `?ativa=` opcional), `GET /api/igrejas/{id}/filiais`, `PUT /api/igrejas/{id}` (nome, telefone e endereço, 200 com corpo), `POST /{id}/ativar` e `POST /{id}/desativar` (204). Domain: `AlterarNome`, `AlterarTelefone` e regras de ativação (matriz com filial ativa não desativa; filial de matriz inativa não ativa; filial ativa não é criada em matriz inativa; todas 422). `AtualizarIgrejaRequest` + validador; regras compartilhadas em `RegrasDaIgreja` (extensões do `IRuleBuilder`). O repositório faz `Include` da matriz e das filiais no `ObterPorIdAsync` e `AsNoTracking` na listagem. Sem migration nova. Testado no `TempleDb` pelo Swagger | Decisões: só exclusão lógica (sem DELETE), editar nome, telefone e endereço, e listagem simples. Tropeços: `.http` não salvo e Swagger com a Api parada ("Failed to fetch", "Undocumented"). Os valores `"string"` de exemplo do Swagger foram gravados (texto válido, mas sem sentido). Próxima: 3.4B, CRUD de Membros |
+| 2026-11-19 | 3.4B | CRUD de Membros em `/api/membros`: `POST` (201 + Location; matrícula gerada pelo banco), `GET` paginado com filtros `igrejaId`, `nome` (parcial, `LIKE`), `cargo` e `ativo` (`PaginaResponse<T>` na Api e `ResultadoPaginado<T>` no repositório; padrão 20, máximo 100; ordem por nome e matrícula; `Skip`/`Take`), `GET /{id}`, `PUT /{id}` (nome, endereço e grupo), `POST /{id}/ativar` e `/desativar` (204), `POST /{id}/promocoes` (200 com o membro) e `GET /{id}/historico-cargos`. Domain: `Membro.Ativo` (nasce ativo), `Ativar(Igreja)` exige igreja ativa (422), `Desativar`, e membro desativado não é promovido (422). Validadores com `RegrasDoMembro` e `IsInEnum` (o conversor JSON aceita números). `MembroService` usa dois repositórios e um único `IUnitOfWork`. Migration `AdicionaAtivoAoMembro` com `defaultValue` trocado à mão para `true`. Testado pelo Swagger no `TempleDb`: cadastro, desativar, ativar e promoção Cooperador → Diácono com histórico gravado | Lição de ouro: migration gerada não é migration revisada. Tropeços: migration gerada duas vezes (o nome já existia; para refazer, usar `migrations remove`), 4 arquivos com maiúscula errada no nome (corrigidos) e `"string"` do Swagger no complemento. A busca por nome ignora maiúsculas, mas não acentos (collation CI_AS). Pendente (Módulo 5): o que fazer com os membros quando a igreja é desativada. Próxima: Módulo 4, Segurança |

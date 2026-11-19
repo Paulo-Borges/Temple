@@ -15,7 +15,8 @@ public static class MembroMapeamento
             membro.Endereco.ParaDto(),
             membro.IgrejaId,
             membro.CargoAtual,
-            membro.Grupo);
+            membro.Grupo,
+            membro.Ativo);
     }
 
     public static HistoricoCargoResponse ParaResponse(this HistoricoCargo historico)

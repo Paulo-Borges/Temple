@@ -18,6 +18,9 @@ public sealed class Membro
     public TipoCargo CargoAtual { get; private set; }
     public GrupoMembro? Grupo { get; private set; }
 
+    public bool Ativo { get; private set; }
+
+
     public Guid IgrejaId { get; private set; }
     // public Igreja Igreja { get; private set; }
     public IReadOnlyList<HistoricoCargo> HistoricoCargos => _historicoCargos.AsReadOnly();
@@ -25,7 +28,7 @@ public sealed class Membro
     // Construtor usado apenas pelo EF Core ao ler do banco.
     // O Endereco é preenchido pelo EF logo após a criação do objeto.
 #pragma warning disable CS8618
-    private Membro(Guid id, int matricula, string nome, DateOnly dataNascimento, TipoCargo cargoAtual, GrupoMembro? grupo, Guid igrejaId)
+     private Membro(Guid id, int matricula, string nome, DateOnly dataNascimento, TipoCargo cargoAtual, GrupoMembro? grupo, bool ativo, Guid igrejaId)
 #pragma warning restore CS8618
     {
         Id = id;
@@ -34,8 +37,10 @@ public sealed class Membro
         DataNascimento = dataNascimento;
         CargoAtual = cargoAtual;
         Grupo = grupo;
+        Ativo = ativo;
         IgrejaId = igrejaId;
     }
+
 
 
 
@@ -58,6 +63,8 @@ public sealed class Membro
         // Igreja = igreja;
         CargoAtual = ValidarCargo(cargoAtual);
         Grupo = ValidarGrupo(grupo);
+                Ativo = true;
+
     }
 
         public void AlterarGrupo(GrupoMembro? novoGrupo)
@@ -67,6 +74,11 @@ public sealed class Membro
 
     public void PromoverCargo(TipoCargo novoCargo, DateOnly dataPromocao)
     {
+                if (!Ativo)
+        {
+            throw new DomainException("Não é possível promover um membro desativado.");
+        }
+
         ValidarCargo(novoCargo);
 
         if (novoCargo == CargoAtual)
@@ -110,6 +122,29 @@ public sealed class Membro
         ArgumentNullException.ThrowIfNull(novoEndereco);
         Endereco = novoEndereco;
     }
+
+        public void Ativar(Igreja igreja)
+    {
+        ArgumentNullException.ThrowIfNull(igreja);
+
+        if (igreja.Id != IgrejaId)
+        {
+            throw new InvalidOperationException("A igreja informada não é a igreja do membro.");
+        }
+
+        if (!igreja.Ativa)
+        {
+            throw new DomainException("Não é possível ativar um membro de uma igreja inativa.");
+        }
+
+        Ativo = true;
+    }
+
+    public void Desativar()
+    {
+        Ativo = false;
+    }
+
 
     private static string ValidarNome(string nome)
     {

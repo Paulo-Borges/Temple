@@ -103,3 +103,79 @@ POST {{baseUrl}}/api/igrejas/{{criarMatriz.response.body.$.id}}/desativar
 ### Ativar a matriz criada acima
 POST {{baseUrl}}/api/igrejas/{{criarMatriz.response.body.$.id}}/ativar
 
+
+### ===================== MEMBROS =====================
+
+### Buscar as igrejas ativas (o cadastro de membro usa a primeira)
+# @name igrejasAtivas
+GET {{baseUrl}}/api/igrejas?ativa=true
+
+### Cadastrar membro na primeira igreja ativa
+# @name criarMembro
+POST {{baseUrl}}/api/membros
+Content-Type: application/json
+
+{
+  "nome": "João da Silva",
+  "dataNascimento": "1985-03-10",
+  "endereco": {
+    "logradouro": "Rua das Acácias",
+    "numero": "45",
+    "complemento": null,
+    "bairro": "Centro",
+    "cidade": "São Paulo",
+    "uf": "SP",
+    "cep": "01002-000"
+  },
+  "igrejaId": "{{igrejasAtivas.response.body.$[0].id}}",
+  "cargoAtual": "Membro",
+  "grupo": "Varoes"
+}
+
+### Listar membros (primeira página, 20 por página)
+GET {{baseUrl}}/api/membros
+
+### Listar membros com filtros e paginação
+GET {{baseUrl}}/api/membros?nome=jo&ativo=true&pagina=1&tamanhoPagina=10
+
+### Listar só os diáconos
+GET {{baseUrl}}/api/membros?cargo=Diacono
+
+### Obter o membro cadastrado acima
+GET {{baseUrl}}/api/membros/{{criarMembro.response.body.$.id}}
+
+### Atualizar o membro cadastrado acima
+PUT {{baseUrl}}/api/membros/{{criarMembro.response.body.$.id}}
+Content-Type: application/json
+
+{
+  "nome": "João Pereira da Silva",
+  "endereco": {
+    "logradouro": "Rua das Acácias",
+    "numero": "45",
+    "complemento": "Casa 2",
+    "bairro": "Centro",
+    "cidade": "São Paulo",
+    "uf": "SP",
+    "cep": "01002-000"
+  },
+  "grupo": "Varoes"
+}
+
+### Promover o membro cadastrado acima
+POST {{baseUrl}}/api/membros/{{criarMembro.response.body.$.id}}/promocoes
+Content-Type: application/json
+
+{
+  "novoCargo": "Cooperador",
+  "dataPromocao": "2026-01-15"
+}
+
+### Histórico de cargos do membro cadastrado acima
+GET {{baseUrl}}/api/membros/{{criarMembro.response.body.$.id}}/historico-cargos
+
+### Desativar o membro cadastrado acima
+POST {{baseUrl}}/api/membros/{{criarMembro.response.body.$.id}}/desativar
+
+### Ativar o membro cadastrado acima
+POST {{baseUrl}}/api/membros/{{criarMembro.response.body.$.id}}/ativar

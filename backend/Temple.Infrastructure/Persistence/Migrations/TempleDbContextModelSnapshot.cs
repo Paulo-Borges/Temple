@@ -140,6 +140,9 @@ namespace Temple.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<bool>("Ativo")
+                        .HasColumnType("bit");
+
                     b.Property<int>("CargoAtual")
                         .HasColumnType("int");
 

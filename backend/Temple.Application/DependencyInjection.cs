@@ -2,6 +2,8 @@ using System.Globalization;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using Temple.Application.Igrejas;
+using Temple.Application.Membros;
+
 
 namespace Temple.Application;
 
@@ -14,6 +16,8 @@ public static class DependencyInjection
         services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
 
         services.AddScoped<IgrejaService>();
+        services.AddScoped<MembroService>();
+
 
         return services;
     }

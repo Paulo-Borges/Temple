@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Temple.Application.Comum.Persistencia;
 using Temple.Application.Igrejas;
+using Temple.Application.Membros;
 using Temple.Infrastructure.Persistence;
 using Temple.Infrastructure.Persistence.Repositorios;
 using Temple.Infrastructure.Persistence.Seed;
@@ -29,6 +30,7 @@ public static class DependencyInjection
         });
 
         services.AddScoped<IIgrejaRepository, IgrejaRepository>();
+        services.AddScoped<IMembroRepository, MembroRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         return services;
