@@ -14,14 +14,14 @@
 | 1 | Fundamentos do Backend | 4 | 4 | ✅ |
 | 2 | Persistência (EF Core + SQL Server) | 3 | 3 | ✅ |
 | 3 | Application e API | 5 | 5 | ✅ |
-| 4 | Segurança | 3 | 0 | ⬜ |
+| 4 | Segurança | 3 | 1 | 🔄 |
 | 5 | Regras de Negócio | 3 | 0 | ⬜ |
 | 5B | Financeiro | 6 | 0 | ⬜ |
 | 6 | Fundamentos do Frontend | 4 | 0 | ⬜ |
 | 7 | Integração Front + API | 4 | 0 | ⬜ |
 | 8 | Funcionalidades Finais | 4 | 0 | ⬜ |
 | 9 | Qualidade | 2 | 0 | ⬜ |
-| **Total** | | **40** | **14** | **35%** |
+| **Total** | | **40** | **15** | **38%** |
 
 ---
 
@@ -129,7 +129,7 @@ Temple/
 ### Módulo 4: Segurança
 | # | Aula | Status |
 |---|---|:---:|
-| 4.1 | ASP.NET Identity e login com JWT | ⬜ |
+| 4.1 | ASP.NET Identity e login com JWT | ✅ |
 | 4.2 | Roles e Policies por perfil | ⬜ |
 | 4.3 | Escopo por igreja (a filial só vê os próprios dados) | ⬜ |
 
@@ -201,3 +201,4 @@ Temple/
 | 2026-11-17 | 3.3 | `IgrejasController` com `[ApiController]` e 3 rotas: `POST /api/igrejas` (matriz, 201 + Location), `POST /api/igrejas/{matrizId:guid}/filiais` e `GET /api/igrejas/{id:guid}`. `TratadorGlobalDeExcecoes` (`IExceptionHandler` + `IProblemDetailsService`): Validation → 400 (erros em camelCase), Domain → 422, NaoEncontrado → 404, Conflito → 409, outras → 500. `AddProblemDetails`, `UseExceptionHandler` e `UseStatusCodePages`. JSON com `RespectNullableAnnotations`, `RespectRequiredConstructorParameters` e `JsonStringEnumConverter`. Swagger UI (Swashbuckle.AspNetCore.SwaggerUI 10.3.1) sobre o OpenAPI nativo, só em Development. `Temple.Api.http` com `@baseUrl` e requisição nomeada. Template `WeatherForecast` removido. Testado pelo Swagger no `TempleDb`: matriz e filial com 201 | Decisões: Swagger UI, `DomainException` → 422 e filial como sub-recurso da matriz. Tropeços: `});;` no `Program.cs` e o corpo da filial enviado à rota de matriz no Swagger (virou matriz; lição: em REST, a URL carrega significado). O `complemento` precisa vir no JSON, nem que seja `null`. Próxima: 3.4, CRUD de Igrejas e Membros |
 | 2026-11-19 | 3.4A | A 3.4 foi dividida em 3.4A (Igrejas) e 3.4B (Membros). Rotas novas: `GET /api/igrejas` (por nome, com `?ativa=` opcional), `GET /api/igrejas/{id}/filiais`, `PUT /api/igrejas/{id}` (nome, telefone e endereço, 200 com corpo), `POST /{id}/ativar` e `POST /{id}/desativar` (204). Domain: `AlterarNome`, `AlterarTelefone` e regras de ativação (matriz com filial ativa não desativa; filial de matriz inativa não ativa; filial ativa não é criada em matriz inativa; todas 422). `AtualizarIgrejaRequest` + validador; regras compartilhadas em `RegrasDaIgreja` (extensões do `IRuleBuilder`). O repositório faz `Include` da matriz e das filiais no `ObterPorIdAsync` e `AsNoTracking` na listagem. Sem migration nova. Testado no `TempleDb` pelo Swagger | Decisões: só exclusão lógica (sem DELETE), editar nome, telefone e endereço, e listagem simples. Tropeços: `.http` não salvo e Swagger com a Api parada ("Failed to fetch", "Undocumented"). Os valores `"string"` de exemplo do Swagger foram gravados (texto válido, mas sem sentido). Próxima: 3.4B, CRUD de Membros |
 | 2026-11-19 | 3.4B | CRUD de Membros em `/api/membros`: `POST` (201 + Location; matrícula gerada pelo banco), `GET` paginado com filtros `igrejaId`, `nome` (parcial, `LIKE`), `cargo` e `ativo` (`PaginaResponse<T>` na Api e `ResultadoPaginado<T>` no repositório; padrão 20, máximo 100; ordem por nome e matrícula; `Skip`/`Take`), `GET /{id}`, `PUT /{id}` (nome, endereço e grupo), `POST /{id}/ativar` e `/desativar` (204), `POST /{id}/promocoes` (200 com o membro) e `GET /{id}/historico-cargos`. Domain: `Membro.Ativo` (nasce ativo), `Ativar(Igreja)` exige igreja ativa (422), `Desativar`, e membro desativado não é promovido (422). Validadores com `RegrasDoMembro` e `IsInEnum` (o conversor JSON aceita números). `MembroService` usa dois repositórios e um único `IUnitOfWork`. Migration `AdicionaAtivoAoMembro` com `defaultValue` trocado à mão para `true`. Testado pelo Swagger no `TempleDb`: cadastro, desativar, ativar e promoção Cooperador → Diácono com histórico gravado | Lição de ouro: migration gerada não é migration revisada. Tropeços: migration gerada duas vezes (o nome já existia; para refazer, usar `migrations remove`), 4 arquivos com maiúscula errada no nome (corrigidos) e `"string"` do Swagger no complemento. A busca por nome ignora maiúsculas, mas não acentos (collation CI_AS). Pendente (Módulo 5): o que fazer com os membros quando a igreja é desativada. Próxima: Módulo 4, Segurança |
+| 2026-11-19 | 4.1 | ASP.NET Identity (`AddIdentityCore` + `AddEntityFrameworkStores`) no próprio `TempleDbContext`, que passou a herdar `IdentityDbContext<Usuario, IdentityRole<Guid>, Guid>` (o `base.OnModelCreating` vem primeiro). `Usuario : IdentityUser<Guid>` com `Nome`, na Infrastructure; o Domain não conhece o login. Na Application: `AutenticacaoService`, contratos `IServicoDeIdentidade` e `IGeradorDeToken`, `LoginRequest` + validador e `NaoAutorizadoException` (401). JWT HS256 (`JsonWebTokenHandler`) de 8h, com claims `sub`, `email`, `name` e `jti`; `OpcoesJwt` exige chave de 32 bytes ou mais. `JwtBearer` valida emissor, audiência, assinatura, algoritmo e validade. Política padrão: toda rota exige login, menos o `POST /api/autenticacao/login` (`[AllowAnonymous]`). `GET /api/autenticacao/me`. Senha com 8 caracteres ou mais e bloqueio de 15 min após 5 erros, com mensagem genérica. Seed do Pastor em Development, com chave e senha no user-secrets. Swagger com Authorize (transformador do OpenAPI). `.http` com `# @prompt senha` e `Authorization` em todas as requisições. Migration `AdicionaIdentity` (7 tabelas). Testado pelo Swagger no `TempleDb` | Decisões: Identity no mesmo contexto, seed do Pastor agora (a rota de criar usuário fica para a 4.2), tudo protegido e só access token. Tropeços: o EF não aceita 2 construtores com o mesmo número de parâmetros (o do EF ficou só com `nome`); os segredos precisam vir antes da migration; nome de arquivo `NaoAutorizasoException` e um `Authorization` faltando no `.http` (corrigidos). As mensagens do Identity estão em inglês (traduzir na 4.2). Próxima: 4.2, Roles e Policies por perfil |

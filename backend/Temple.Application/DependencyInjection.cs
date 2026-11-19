@@ -3,7 +3,7 @@ using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using Temple.Application.Igrejas;
 using Temple.Application.Membros;
-
+using Temple.Application.Autenticacao;
 
 namespace Temple.Application;
 
@@ -17,6 +17,7 @@ public static class DependencyInjection
 
         services.AddScoped<IgrejaService>();
         services.AddScoped<MembroService>();
+        services.AddScoped<AutenticacaoService>();
 
 
         return services;

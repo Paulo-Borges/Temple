@@ -1,8 +1,30 @@
 @baseUrl = http://localhost:5022
+@token = {{login.response.body.$.token}}
+
+### ===================== AUTENTICAÇÃO =====================
+
+### Login do Pastor (envie primeiro; o REST Client pede a senha)
+# @name login
+# @prompt senha Senha do Pastor inicial
+POST {{baseUrl}}/api/autenticacao/login
+Content-Type: application/json
+
+{
+  "email": "pastor@temple.local",
+  "senha": "{{senha}}"
+}
+
+### Quem sou eu (usuário do token)
+GET {{baseUrl}}/api/autenticacao/me
+Authorization: Bearer {{token}}
+
+### ===================== IGREJAS =====================
+
 
 ### Criar matriz
 # @name criarMatriz
 POST {{baseUrl}}/api/igrejas
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -24,6 +46,7 @@ Content-Type: application/json
 
 ### Criar filial da matriz criada acima
 POST {{baseUrl}}/api/igrejas/{{criarMatriz.response.body.$.id}}/filiais
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -45,12 +68,15 @@ Content-Type: application/json
 
 ### Obter a matriz criada acima
 GET {{baseUrl}}/api/igrejas/{{criarMatriz.response.body.$.id}}
+Authorization: Bearer {{token}}
 
 ### Obter uma igreja que não existe (404)
 GET {{baseUrl}}/api/igrejas/00000000-0000-0000-0000-000000000001
+Authorization: Bearer {{token}}
 
 ### Campos inválidos (400)
 POST {{baseUrl}}/api/igrejas
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -72,15 +98,19 @@ Content-Type: application/json
 
 ### Listar todas as igrejas
 GET {{baseUrl}}/api/igrejas
+Authorization: Bearer {{token}}
 
 ### Listar só as igrejas ativas
 GET {{baseUrl}}/api/igrejas?ativa=true
+Authorization: Bearer {{token}}
 
 ### Listar as filiais da matriz criada acima
 GET {{baseUrl}}/api/igrejas/{{criarMatriz.response.body.$.id}}/filiais
+Authorization: Bearer {{token}}
 
 ### Atualizar a matriz criada acima
 PUT {{baseUrl}}/api/igrejas/{{criarMatriz.response.body.$.id}}
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -99,9 +129,11 @@ Content-Type: application/json
 
 ### Desativar a matriz criada acima (422 enquanto houver filial ativa)
 POST {{baseUrl}}/api/igrejas/{{criarMatriz.response.body.$.id}}/desativar
+Authorization: Bearer {{token}}
 
 ### Ativar a matriz criada acima
 POST {{baseUrl}}/api/igrejas/{{criarMatriz.response.body.$.id}}/ativar
+Authorization: Bearer {{token}}
 
 
 ### ===================== MEMBROS =====================
@@ -109,10 +141,12 @@ POST {{baseUrl}}/api/igrejas/{{criarMatriz.response.body.$.id}}/ativar
 ### Buscar as igrejas ativas (o cadastro de membro usa a primeira)
 # @name igrejasAtivas
 GET {{baseUrl}}/api/igrejas?ativa=true
+Authorization: Bearer {{token}}
 
 ### Cadastrar membro na primeira igreja ativa
 # @name criarMembro
 POST {{baseUrl}}/api/membros
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -134,18 +168,23 @@ Content-Type: application/json
 
 ### Listar membros (primeira página, 20 por página)
 GET {{baseUrl}}/api/membros
+Authorization: Bearer {{token}}
 
 ### Listar membros com filtros e paginação
 GET {{baseUrl}}/api/membros?nome=jo&ativo=true&pagina=1&tamanhoPagina=10
+Authorization: Bearer {{token}}
 
 ### Listar só os diáconos
 GET {{baseUrl}}/api/membros?cargo=Diacono
+Authorization: Bearer {{token}}
 
 ### Obter o membro cadastrado acima
 GET {{baseUrl}}/api/membros/{{criarMembro.response.body.$.id}}
+Authorization: Bearer {{token}}
 
 ### Atualizar o membro cadastrado acima
 PUT {{baseUrl}}/api/membros/{{criarMembro.response.body.$.id}}
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -164,6 +203,7 @@ Content-Type: application/json
 
 ### Promover o membro cadastrado acima
 POST {{baseUrl}}/api/membros/{{criarMembro.response.body.$.id}}/promocoes
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -173,9 +213,12 @@ Content-Type: application/json
 
 ### Histórico de cargos do membro cadastrado acima
 GET {{baseUrl}}/api/membros/{{criarMembro.response.body.$.id}}/historico-cargos
+Authorization: Bearer {{token}}
 
 ### Desativar o membro cadastrado acima
 POST {{baseUrl}}/api/membros/{{criarMembro.response.body.$.id}}/desativar
+Authorization: Bearer {{token}}
 
 ### Ativar o membro cadastrado acima
 POST {{baseUrl}}/api/membros/{{criarMembro.response.body.$.id}}/ativar
+Authorization: Bearer {{token}}

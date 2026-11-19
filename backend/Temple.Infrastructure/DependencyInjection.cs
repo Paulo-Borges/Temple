@@ -1,8 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Temple.Application.Autenticacao;
 using Temple.Application.Comum.Persistencia;
 using Temple.Application.Igrejas;
 using Temple.Application.Membros;
+using Temple.Infrastructure.Identidade;
 using Temple.Infrastructure.Persistence;
 using Temple.Infrastructure.Persistence.Repositorios;
 using Temple.Infrastructure.Persistence.Seed;
@@ -14,9 +16,11 @@ public static class DependencyInjection
     public static IServiceCollection AddInfrastructure(
         this IServiceCollection services,
         string connectionString,
-        bool usarDadosDeDesenvolvimento)
+        bool usarDadosDeDesenvolvimento,
+        OpcoesJwt opcoesJwt)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
+        ArgumentNullException.ThrowIfNull(opcoesJwt);
 
         services.AddDbContext<TempleDbContext>(options =>
         {
@@ -28,6 +32,25 @@ public static class DependencyInjection
                 options.UseAsyncSeeding(DadosDeDesenvolvimento.SemearAsync);
             }
         });
+
+        services.AddIdentityCore<Usuario>(options =>
+            {
+                options.User.RequireUniqueEmail = true;
+
+                options.Password.RequiredLength = 8;
+                options.Password.RequireDigit = true;
+                options.Password.RequireLowercase = true;
+                options.Password.RequireUppercase = true;
+                options.Password.RequireNonAlphanumeric = true;
+
+                options.Lockout.MaxFailedAccessAttempts = 5;
+                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+            })
+            .AddEntityFrameworkStores<TempleDbContext>();
+
+        services.AddSingleton(opcoesJwt);
+        services.AddSingleton<IGeradorDeToken, GeradorDeTokenJwt>();
+        services.AddScoped<IServicoDeIdentidade, ServicoDeIdentidade>();
 
         services.AddScoped<IIgrejaRepository, IgrejaRepository>();
         services.AddScoped<IMembroRepository, MembroRepository>();

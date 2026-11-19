@@ -1,54 +1,89 @@
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.IdentityModel.JsonWebTokens;
+using Microsoft.IdentityModel.Tokens;
+using Temple.Api.Configuracao;
 using Temple.Api.Tratamento;
 using Temple.Application;
 using Temple.Infrastructure;
-
+using Temple.Infrastructure.Identidade;
 
 var builder = WebApplication.CreateBuilder(args);
 
-string? connectionString = builder.Configuration.GetConnectionString("TempleDb");
+string connectionString = builder.Configuration.ObterObrigatorio("ConnectionStrings:TempleDb");
 
-if (string.IsNullOrWhiteSpace(connectionString))
-{
-    throw new InvalidOperationException("A connection string 'TempleDb' não foi configurada.");
-}
+OpcoesJwt opcoesJwt = new(
+    emissor: builder.Configuration.ObterObrigatorio("Jwt:Emissor"),
+    audiencia: builder.Configuration.ObterObrigatorio("Jwt:Audiencia"),
+    chave: builder.Configuration.ObterObrigatorio("Jwt:Chave"),
+    expiracaoEmHoras: builder.Configuration.GetValue<int>("Jwt:ExpiracaoEmHoras"));
 
 builder.Services.AddApplication();
-builder.Services.AddInfrastructure(connectionString, builder.Environment.IsDevelopment());
+builder.Services.AddInfrastructure(connectionString, builder.Environment.IsDevelopment(), opcoesJwt);
 
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.MapInboundClaims = false;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = opcoesJwt.Emissor,
+            ValidateAudience = true,
+            ValidAudience = opcoesJwt.Audiencia,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = opcoesJwt.CriarChaveDeAssinatura(),
+            ValidAlgorithms = [SecurityAlgorithms.HmacSha256],
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.FromMinutes(1),
+            NameClaimType = JwtRegisteredClaimNames.Name
+        };
+    });
+
+builder.Services.AddAuthorizationBuilder()
+    .SetFallbackPolicy(new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build());
 
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<TratadorGlobalDeExcecoes>();
 
-// Add services to the container.
-
 builder.Services.AddControllers()
- .AddJsonOptions(options =>
+    .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.RespectNullableAnnotations = true;
         options.JsonSerializerOptions.RespectRequiredConstructorParameters = true;
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     });
 
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi(options => options.AddDocumentTransformer<SegurancaBearerNoOpenApi>());
 
 var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+{
+    await app.Services.CriarPastorInicialAsync(
+        nome: app.Configuration.ObterObrigatorio("PastorInicial:Nome"),
+        email: app.Configuration.ObterObrigatorio("PastorInicial:Email"),
+        senha: app.Configuration.ObterObrigatorio("PastorInicial:Senha"));
+}
 
 app.UseExceptionHandler();
 app.UseStatusCodePages();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
-     app.UseSwaggerUI(options => options.SwaggerEndpoint("/openapi/v1.json", "Temple API v1"));
+    app.MapOpenApi().AllowAnonymous();
+    app.UseSwaggerUI(options => options.SwaggerEndpoint("/openapi/v1.json", "Temple API v1"));
 }
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
 
-app.Run();
+await app.RunAsync();
+
