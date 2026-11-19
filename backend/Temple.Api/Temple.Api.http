@@ -70,3 +70,36 @@ Content-Type: application/json
   }
 }
 
+### Listar todas as igrejas
+GET {{baseUrl}}/api/igrejas
+
+### Listar só as igrejas ativas
+GET {{baseUrl}}/api/igrejas?ativa=true
+
+### Listar as filiais da matriz criada acima
+GET {{baseUrl}}/api/igrejas/{{criarMatriz.response.body.$.id}}/filiais
+
+### Atualizar a matriz criada acima
+PUT {{baseUrl}}/api/igrejas/{{criarMatriz.response.body.$.id}}
+Content-Type: application/json
+
+{
+  "nome": "Igreja Sede Teste Renovada",
+  "telefone": "(11) 99999-8888",
+  "endereco": {
+    "logradouro": "Rua das Palmeiras",
+    "numero": "300",
+    "complemento": "Templo principal",
+    "bairro": "Vila Mariana",
+    "cidade": "São Paulo",
+    "uf": "SP",
+    "cep": "04101-000"
+  }
+}
+
+### Desativar a matriz criada acima (422 enquanto houver filial ativa)
+POST {{baseUrl}}/api/igrejas/{{criarMatriz.response.body.$.id}}/desativar
+
+### Ativar a matriz criada acima
+POST {{baseUrl}}/api/igrejas/{{criarMatriz.response.body.$.id}}/ativar
+

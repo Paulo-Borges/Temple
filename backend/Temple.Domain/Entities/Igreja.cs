@@ -79,6 +79,11 @@ public sealed class Igreja
             throw new DomainException("Uma filial não pode ter filiais.");
         }
 
+                if (ativa && !Ativa)
+        {
+            throw new DomainException("Não é possível criar uma filial ativa em uma matriz desativada.");
+        }
+
         Igreja filial = new(nome, cnpj, telefone, dataFundacao, ativa, endereco)
         {
             IgrejaMatrizId = Id,
@@ -87,6 +92,16 @@ public sealed class Igreja
 
         _filiais.Add(filial);
         return filial;
+    }
+
+        public void AlterarNome(string novoNome)
+    {
+        Nome = ValidarNome(novoNome);
+    }
+
+    public void AlterarTelefone(string novoTelefone)
+    {
+        Telefone = ValidarTelefone(novoTelefone);
     }
 
 
@@ -98,15 +113,34 @@ public sealed class Igreja
         Endereco = novoEndereco;
     }
 
-        public void Ativar()
+      public void Ativar()
     {
+        if (!EhMatriz)
+        {
+            if (IgrejaMatriz is null)
+            {
+                throw new InvalidOperationException("A matriz da filial precisa estar carregada para ativá-la.");
+            }
+
+            if (!IgrejaMatriz.Ativa)
+            {
+                throw new DomainException("A matriz desta filial está desativada.");
+            }
+        }
+
         Ativa = true;
     }
 
     public void Desativar()
     {
+        if (_filiais.Any(filial => filial.Ativa))
+        {
+            throw new DomainException("Desative as filiais antes da matriz.");
+        }
+
         Ativa = false;
     }
+
 
     // métodos de validação privadas.
         private static string ValidarNome(string nome)

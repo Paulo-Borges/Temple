@@ -1,4 +1,5 @@
 using FluentValidation;
+using Temple.Application.Comum;
 using Temple.Application.Comum.Excecoes;
 using Temple.Application.Comum.Persistencia;
 using Temple.Domain.Entities;
@@ -8,7 +9,8 @@ namespace Temple.Application.Igrejas;
 public sealed class IgrejaService(
     IIgrejaRepository igrejaRepository,
     IUnitOfWork unitOfWork,
-    IValidator<CriarIgrejaRequest> criarIgrejaValidator)
+    IValidator<CriarIgrejaRequest> criarIgrejaValidator,
+    IValidator<AtualizarIgrejaRequest> atualizarIgrejaValidator)
 {
     public async Task<IgrejaResponse> CriarMatrizAsync(CriarIgrejaRequest request, CancellationToken cancellationToken)
     {
@@ -45,6 +47,60 @@ public sealed class IgrejaService(
 
         return igreja.ParaResponse();
     }
+
+        public async Task<IReadOnlyList<IgrejaResponse>> ListarAsync(bool? ativa, CancellationToken cancellationToken)
+    {
+        IReadOnlyList<Igreja> igrejas = await igrejaRepository.ListarAsync(ativa, cancellationToken);
+
+        return igrejas
+            .Select(igreja => igreja.ParaResponse())
+            .ToList();
+    }
+
+    public async Task<IReadOnlyList<IgrejaResponse>> ListarFiliaisAsync(Guid matrizId, CancellationToken cancellationToken)
+    {
+        Igreja matriz = await ObterEntidadeAsync(matrizId, cancellationToken);
+
+        return matriz.Filiais
+            .OrderBy(filial => filial.Nome)
+            .Select(filial => filial.ParaResponse())
+            .ToList();
+    }
+
+    public async Task<IgrejaResponse> AtualizarAsync(Guid id, AtualizarIgrejaRequest request, CancellationToken cancellationToken)
+    {
+        await atualizarIgrejaValidator.ValidateAndThrowAsync(request, cancellationToken);
+
+        Igreja igreja = await ObterEntidadeAsync(id, cancellationToken);
+
+        igreja.AlterarNome(request.Nome);
+        igreja.AlterarTelefone(request.Telefone);
+        igreja.AlterarEndereco(request.Endereco.ParaEndereco());
+
+        await unitOfWork.SalvarAlteracoesAsync(cancellationToken);
+
+        return igreja.ParaResponse();
+    }
+
+    public async Task AtivarAsync(Guid id, CancellationToken cancellationToken)
+    {
+        Igreja igreja = await ObterEntidadeAsync(id, cancellationToken);
+
+        igreja.Ativar();
+
+        await unitOfWork.SalvarAlteracoesAsync(cancellationToken);
+    }
+
+    public async Task DesativarAsync(Guid id, CancellationToken cancellationToken)
+    {
+        Igreja igreja = await ObterEntidadeAsync(id, cancellationToken);
+
+        igreja.Desativar();
+
+        await unitOfWork.SalvarAlteracoesAsync(cancellationToken);
+    }
+
+
 
     private async Task<Igreja> ObterEntidadeAsync(Guid id, CancellationToken cancellationToken)
     {

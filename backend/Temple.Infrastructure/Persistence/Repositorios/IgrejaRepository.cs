@@ -8,7 +8,24 @@ internal sealed class IgrejaRepository(TempleDbContext context) : IIgrejaReposit
 {
     public Task<Igreja?> ObterPorIdAsync(Guid id, CancellationToken cancellationToken)
     {
-        return context.Igrejas.FirstOrDefaultAsync(igreja => igreja.Id == id, cancellationToken);
+        return context.Igrejas
+            .Include(igreja => igreja.IgrejaMatriz)
+            .Include(igreja => igreja.Filiais)
+            .FirstOrDefaultAsync(igreja => igreja.Id == id, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<Igreja>> ListarAsync(bool? ativa, CancellationToken cancellationToken)
+    {
+        IQueryable<Igreja> consulta = context.Igrejas.AsNoTracking();
+
+        if (ativa is bool valor)
+        {
+            consulta = consulta.Where(igreja => igreja.Ativa == valor);
+        }
+
+        return await consulta
+            .OrderBy(igreja => igreja.Nome)
+            .ToListAsync(cancellationToken);
     }
 
     public Task<bool> ExisteComCnpjAsync(string cnpj, CancellationToken cancellationToken)
