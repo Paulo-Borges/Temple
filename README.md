@@ -215,8 +215,10 @@ A chave do JWT e a senha do Pastor inicial **não ficam no repositório**: elas 
 dotnet user-secrets set "Jwt:Chave" "$(openssl rand -base64 48)" --project Temple.Api
 
 # Senha do Pastor inicial: 8 caracteres ou mais, com maiúscula, minúscula, número e símbolo
-dotnet user-secrets set "PastorInicial:Senha" 'SuaSenha@2026' --project Temple.Api
+dotnet user-secrets set "PastorInicial:Senha" '<defina-uma-senha-forte>' --project Temple.Api
 ```
+
+> ⚠️ **Troque `<defina-uma-senha-forte>` por uma senha sua.** O marcador não funciona de propósito: ele não tem maiúscula nem número, e a API se recusa a subir até você definir uma senha forte. Use aspas **simples**, para que símbolos como `$` e `!` não sejam interpretados pelo terminal.
 
 <details>
 <summary>PowerShell (gerar a chave sem o openssl)</summary>
@@ -225,7 +227,7 @@ dotnet user-secrets set "PastorInicial:Senha" 'SuaSenha@2026' --project Temple.A
 $bytes = New-Object byte[] 48
 [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes)
 dotnet user-secrets set "Jwt:Chave" ([Convert]::ToBase64String($bytes)) --project Temple.Api
-dotnet user-secrets set "PastorInicial:Senha" 'SuaSenha@2026' --project Temple.Api
+dotnet user-secrets set "PastorInicial:Senha" '<defina-uma-senha-forte>' --project Temple.Api
 ```
 </details>
 
