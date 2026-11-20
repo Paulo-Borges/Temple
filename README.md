@@ -4,7 +4,7 @@ Sistema web para a gestão de igrejas: **matriz e filiais, membros, cargos ecles
 
 O projeto é construído **passo a passo, como um curso**, com foco em boas práticas de **C#/.NET** e **React/TypeScript**: arquitetura limpa, tipagem forte, validação em camadas e segurança desde o início.
 
-> 🚧 **Em desenvolvimento.** O **backend** (API REST) está funcional, com cadastro de igrejas e membros e login com JWT. O **frontend** em React começa no Módulo 6 e, por enquanto, ainda é o template inicial do Vite. Veja o [Roteiro](#-roteiro).
+> 🚧 **Em desenvolvimento.** O **backend** (API REST) está funcional, com cadastro de igrejas, membros e usuários, login com JWT e permissões por perfil. O **frontend** em React começa no Módulo 6 e, por enquanto, ainda é o template inicial do Vite. Veja o [Roteiro](#-roteiro).
 
 ---
 
@@ -46,9 +46,16 @@ O projeto é construído **passo a passo, como um curso**, com foco em boas prá
 - A conta é **bloqueada por 15 minutos** após 5 senhas erradas.
 - Em desenvolvimento, um usuário **Pastor** é criado automaticamente.
 
+**Perfis, permissões e usuários**
+- Cada usuário tem **um ou mais perfis**, gravados como papéis do Identity e enviados no token (claim `role`).
+- Autorização **por permissão**: cada rota exige uma permissão (`Membros.Ver`, `Membros.Promover`…), e um único arquivo diz quais perfis têm cada uma.
+- O **Pastor** cadastra usuários, lista, consulta e troca os perfis deles.
+- O sistema nunca fica sem Pastor: tirar o perfil do último Pastor é recusado.
+- Erros do Identity em português: e-mail repetido (409) e senha fraca (400).
+- A troca de perfis vale a partir do **próximo login** do usuário (o token vale 8 horas).
+
 ### 🔜 Planejadas
-- Perfis de acesso: Pastor, Secretário, Tesoureiro, Líderes, Funcionário e Cozinheira, com permissões por rota. *(Módulo 4, em andamento)*
-- Escopo por igreja: cada filial só vê os próprios dados.
+- Escopo por igreja: cada filial só vê os próprios dados, e cada Líder vê o próprio grupo. *(Aula 4.3)*
 - Aniversariantes do mês.
 - **Certificados em PDF**: Batismo, Apresentação de Criança e Promoção de Cargo.
 - **Financeiro**: dízimos, ofertas (que podem ser anônimas), outras entradas, despesas e relatórios consolidados da matriz com as filiais.
@@ -63,6 +70,8 @@ O projeto é construído **passo a passo, como um curso**, com foco em boas prá
 | Tesoureiro | Ver | Ver | — | ✔ | Criar, editar e relatórios |
 | Líderes (Varões, Irmãs, Jovens, Crianças) | — | Ver o próprio grupo | — | ✔ do grupo | — |
 | Funcionário / Cozinheira | — | Ver o próprio perfil | — | — | — |
+
+> Esta é a matriz completa, o objetivo do projeto. **Já em vigor:** as permissões de igrejas, membros e usuários (veja a coluna *Permissão* em [Endpoints da API](#-endpoints-da-api)). Por enquanto, Líderes, Funcionário e Cozinheira recebem **403** em igrejas e membros. O acesso deles ao próprio grupo e ao próprio perfil chega na Aula 4.3.
 
 ---
 
@@ -122,9 +131,9 @@ O backend segue a **Clean Architecture**: as dependências apontam sempre **para
 | Camada | Responsabilidade |
 |---|---|
 | **Domain** | Entidades (`Igreja`, `Membro`, `HistoricoCargo`), o value object `Endereco`, os enums e as **regras de negócio**. Nada é alterado "por fora": tudo passa por métodos que validam. |
-| **Application** | Casos de uso (services), DTOs (`record`), validadores e as **interfaces** que a Infrastructure implementa: repositórios, Unit of Work, identidade e token. |
-| **Infrastructure** | Implementações técnicas: `TempleDbContext`, mapeamentos do EF, repositórios, ASP.NET Identity, geração do JWT e seeds. |
-| **Api** | Entrada HTTP: controllers, autenticação, política de autorização, `ProblemDetails` e Swagger. |
+| **Application** | Casos de uso (services), DTOs (`record`), validadores e as **interfaces** que a Infrastructure implementa: repositórios, Unit of Work, identidade, usuários e token. |
+| **Infrastructure** | Implementações técnicas: `TempleDbContext`, mapeamentos do EF, repositórios, ASP.NET Identity (usuários, perfis e mensagens em português), geração do JWT e seeds. |
+| **Api** | Entrada HTTP: controllers, autenticação, políticas de autorização por permissão, `ProblemDetails` e Swagger. |
 
 **Tradução de erros para HTTP** (handler global com `ProblemDetails`):
 
@@ -135,6 +144,8 @@ O backend segue a **Clean Architecture**: as dependências apontam sempre **para
 | Recurso inexistente (`NaoEncontradoException`) | **404** |
 | Duplicidade, como um CNPJ repetido (`ConflitoException`) | **409** |
 | Regra de negócio (`DomainException`) | **422** |
+
+Sem token, ou com um token inválido ou vencido, a resposta é **401**. Com um token válido, mas sem a permissão da rota, é **403**.
 
 ---
 
@@ -147,10 +158,10 @@ Temple/
 │   ├── global.json                  # fixa o SDK do .NET 10
 │   ├── Directory.Build.props        # avisos tratados como erro, análise de código
 │   ├── Temple.Domain/               # Entities, ValueObjects, Enums, Exceptions
-│   ├── Temple.Application/          # Igrejas, Membros, Autenticacao, Comum
+│   ├── Temple.Application/          # Igrejas, Membros, Usuarios, Autenticacao, Comum
 │   ├── Temple.Infrastructure/       # Persistence (DbContext, Configurations,
 │   │                                #   Migrations, Repositorios, Seed), Identidade
-│   ├── Temple.Api/                  # Controllers, Configuracao, Tratamento,
+│   ├── Temple.Api/                  # Controllers, Autorizacao, Configuracao, Tratamento,
 │   │                                #   Program.cs, Temple.Api.http
 │   └── Temple.Tests/                # xUnit
 ├── src/                             # frontend React (template inicial do Vite)
@@ -165,35 +176,43 @@ Temple/
 
 ## 🌐 Endpoints da API
 
-Todas as rotas, **exceto o login**, exigem o cabeçalho `Authorization: Bearer <token>`.
+Todas as rotas, **exceto o login**, exigem o cabeçalho `Authorization: Bearer <token>`. A coluna **Permissão** mostra quais perfis podem usar cada rota.
 
 ### Autenticação
-| Método | Rota | Descrição |
-|---|---|---|
-| `POST` | `/api/autenticacao/login` | Login com e-mail e senha; devolve `{ token, expiraEm }` |
-| `GET` | `/api/autenticacao/me` | Dados do usuário logado |
+| Método | Rota | Descrição | Permissão |
+|---|---|---|---|
+| `POST` | `/api/autenticacao/login` | Login com e-mail e senha; devolve `{ token, expiraEm }` | Pública |
+| `GET` | `/api/autenticacao/me` | Dados e perfis do usuário logado | Qualquer usuário logado |
 
 ### Igrejas
-| Método | Rota | Descrição |
-|---|---|---|
-| `POST` | `/api/igrejas` | Cadastra uma matriz |
-| `POST` | `/api/igrejas/{matrizId}/filiais` | Cadastra uma filial da matriz |
-| `GET` | `/api/igrejas?ativa=true` | Lista as igrejas (o filtro `ativa` é opcional) |
-| `GET` | `/api/igrejas/{id}` | Busca uma igreja |
-| `GET` | `/api/igrejas/{id}/filiais` | Lista as filiais de uma matriz |
-| `PUT` | `/api/igrejas/{id}` | Edita nome, telefone e endereço |
-| `POST` | `/api/igrejas/{id}/ativar` · `/desativar` | Ativa ou desativa |
+| Método | Rota | Descrição | Permissão |
+|---|---|---|---|
+| `POST` | `/api/igrejas` | Cadastra uma matriz | Pastor |
+| `POST` | `/api/igrejas/{matrizId}/filiais` | Cadastra uma filial da matriz | Pastor |
+| `GET` | `/api/igrejas?ativa=true` | Lista as igrejas (o filtro `ativa` é opcional) | Pastor, Secretário, Tesoureiro |
+| `GET` | `/api/igrejas/{id}` | Busca uma igreja | Pastor, Secretário, Tesoureiro |
+| `GET` | `/api/igrejas/{id}/filiais` | Lista as filiais de uma matriz | Pastor, Secretário, Tesoureiro |
+| `PUT` | `/api/igrejas/{id}` | Edita nome, telefone e endereço | Pastor |
+| `POST` | `/api/igrejas/{id}/ativar` · `/desativar` | Ativa ou desativa | Pastor |
 
 ### Membros
-| Método | Rota | Descrição |
-|---|---|---|
-| `POST` | `/api/membros` | Cadastra um membro |
-| `GET` | `/api/membros?igrejaId=&nome=&cargo=&ativo=&pagina=1&tamanhoPagina=20` | Lista paginada com filtros (máximo de 100 por página) |
-| `GET` | `/api/membros/{id}` | Busca um membro |
-| `PUT` | `/api/membros/{id}` | Edita nome, endereço e grupo |
-| `POST` | `/api/membros/{id}/ativar` · `/desativar` | Ativa ou desativa |
-| `POST` | `/api/membros/{id}/promocoes` | Promove de cargo e grava o histórico |
-| `GET` | `/api/membros/{id}/historico-cargos` | Histórico de cargos, em ordem de data |
+| Método | Rota | Descrição | Permissão |
+|---|---|---|---|
+| `POST` | `/api/membros` | Cadastra um membro | Pastor, Secretário |
+| `GET` | `/api/membros?igrejaId=&nome=&cargo=&ativo=&pagina=1&tamanhoPagina=20` | Lista paginada com filtros (máximo de 100 por página) | Pastor, Secretário, Tesoureiro |
+| `GET` | `/api/membros/{id}` | Busca um membro | Pastor, Secretário, Tesoureiro |
+| `PUT` | `/api/membros/{id}` | Edita nome, endereço e grupo | Pastor, Secretário |
+| `POST` | `/api/membros/{id}/ativar` · `/desativar` | Ativa ou desativa | Pastor, Secretário |
+| `POST` | `/api/membros/{id}/promocoes` | Promove de cargo e grava o histórico | Pastor |
+| `GET` | `/api/membros/{id}/historico-cargos` | Histórico de cargos, em ordem de data | Pastor, Secretário, Tesoureiro |
+
+### Usuários
+| Método | Rota | Descrição | Permissão |
+|---|---|---|---|
+| `POST` | `/api/usuarios` | Cadastra um usuário com nome, e-mail, senha inicial e perfis | Pastor |
+| `GET` | `/api/usuarios` | Lista os usuários e seus perfis | Pastor |
+| `GET` | `/api/usuarios/{id}` | Busca um usuário | Pastor |
+| `PUT` | `/api/usuarios/{id}/perfis` | Troca os perfis (vale a partir do próximo login do usuário) | Pastor |
 
 > 💡 Com a API rodando em desenvolvimento, a documentação interativa fica em **`/swagger`**. O arquivo [`backend/Temple.Api/Temple.Api.http`](backend/Temple.Api/Temple.Api.http) tem exemplos prontos de todas as rotas, para a extensão **REST Client** do VS Code.
 
@@ -246,7 +265,7 @@ dotnet run --project Temple.Api
 - Swagger: `http://localhost:5022/swagger`
 - Login inicial: `pastor@temple.local`, com a senha definida no passo 1. O usuário é criado ao subir a API.
 
-No Swagger, faça o login em `POST /api/autenticacao/login`, copie o `token`, clique em **🔒 Authorize** e cole o token.
+No Swagger, faça o login em `POST /api/autenticacao/login`, copie o `token`, clique em **🔒 Authorize** e cole o token. Os demais usuários são cadastrados pelo Pastor, em `POST /api/usuarios`.
 
 ### 4. Frontend (template inicial)
 Na raiz do repositório:
@@ -267,7 +286,7 @@ npm run dev
 - **Validação em duas camadas**: FluentValidation na entrada (400) e regras de domínio na entidade (422).
 - **Repositórios + Unit of Work**: `AsNoTracking` nas listagens, `Include` só onde a regra precisa, e paginação feita no banco (`Skip`/`Take`, com ordem estável).
 - **Erros padronizados** com `ProblemDetails` (RFC 9457) e um handler global.
-- **Segurança**: senhas com hash (Identity), bloqueio após tentativas erradas, JWT com emissor, audiência, algoritmo e validade conferidos, rotas **fechadas por padrão** (*fallback policy*) e segredos no *user-secrets*.
+- **Segurança**: senhas com hash (Identity), bloqueio após tentativas erradas, JWT com emissor, audiência, algoritmo e validade conferidos, rotas **fechadas por padrão** (*fallback policy*), **autorização por permissão** (*policies* que concentram a matriz perfil → permissão num lugar só) e segredos no *user-secrets*.
 - **Migrations revisadas à mão** antes de aplicar. Por exemplo, a coluna `Ativo` entrou com valor padrão `true`, para não desativar os membros que já existiam.
 
 **React / TypeScript** *(a partir do Módulo 6)*
@@ -289,7 +308,7 @@ npm run dev
 | 1 | Fundamentos do backend: solution, Domain, entidades e value objects | ✅ |
 | 2 | Persistência: EF Core, relacionamentos, migrations e seed | ✅ |
 | 3 | Application e API: DTOs, services, validação, controllers, CRUD de igrejas e membros | ✅ |
-| 4 | Segurança: Identity + JWT ✅ · perfis e policies 🔄 · escopo por igreja | 🔄 |
+| 4 | Segurança: Identity + JWT ✅ · perfis e policies ✅ · escopo por igreja ⬜ | 🔄 |
 | 5 | Regras de negócio: aniversariantes, promoções e certificados em PDF | ⬜ |
 | 5B | Financeiro: dízimos, ofertas, despesas e relatórios | ⬜ |
 | 6 | Fundamentos do frontend: React, TypeScript, Tailwind e React Router | ⬜ |
