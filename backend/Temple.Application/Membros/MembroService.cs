@@ -1,4 +1,5 @@
 using FluentValidation;
+using Temple.Application.Autenticacao;
 using Temple.Application.Comum;
 using Temple.Application.Comum.Excecoes;
 using Temple.Application.Comum.Persistencia;
@@ -11,6 +12,7 @@ public sealed class MembroService(
     IMembroRepository membroRepository,
     IIgrejaRepository igrejaRepository,
     IUnitOfWork unitOfWork,
+    IServicoDeIdentidade servicoDeIdentidade,
     IValidator<CriarMembroRequest> criarMembroValidator,
     IValidator<AtualizarMembroRequest> atualizarMembroValidator,
     IValidator<PromoverCargoRequest> promoverCargoValidator,
@@ -35,6 +37,26 @@ public sealed class MembroService(
 
         return membro.ParaResponse();
     }
+
+        public async Task<MembroResponse> ObterMeuCadastroAsync(Guid usuarioId, CancellationToken cancellationToken)
+    {
+        UsuarioAutenticado? usuario = await servicoDeIdentidade.ObterPorIdAsync(usuarioId, cancellationToken);
+
+        if (usuario is null)
+        {
+            throw new NaoAutorizadoException("O usuário do token não existe mais.");
+        }
+
+        if (usuario.MembroId is not Guid membroId)
+        {
+            throw new NaoEncontradoException("O seu usuário não está vinculado a um cadastro de membro.");
+        }
+
+        Membro membro = await ObterEntidadeAsync(membroId, cancellationToken);
+
+        return membro.ParaResponse();
+    }
+
 
     public async Task<PaginaResponse<MembroResponse>> ListarAsync(ListarMembrosRequest filtro, CancellationToken cancellationToken)
     {

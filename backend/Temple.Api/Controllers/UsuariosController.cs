@@ -51,4 +51,18 @@ public sealed class UsuariosController(UsuarioService usuarioService) : Controll
 
         return Ok(usuario);
     }
+
+    [HttpPut("{id:guid}/membro")]
+    [ProducesResponseType<UsuarioResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<HttpValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<ActionResult<UsuarioResponse>> VincularMembro(Guid id, VincularMembroRequest request, CancellationToken cancellationToken)
+    {
+        UsuarioResponse usuario = await usuarioService.VincularMembroAsync(id, request, cancellationToken);
+
+        return Ok(usuario);
+    }
+
 }

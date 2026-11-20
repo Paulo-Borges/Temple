@@ -1,5 +1,7 @@
 using FluentValidation;
 using Temple.Application.Comum.Excecoes;
+using Temple.Application.Membros;
+using Temple.Domain.Entities;
 using Temple.Domain.Enums;
 using Temple.Domain.Exceptions;
 
@@ -7,12 +9,21 @@ namespace Temple.Application.Usuarios;
 
 public sealed class UsuarioService(
     IGerenciadorDeUsuarios gerenciadorDeUsuarios,
+    IMembroRepository membroRepository,
     IValidator<CriarUsuarioRequest> criarUsuarioValidator,
-    IValidator<AlterarPerfisRequest> alterarPerfisValidator)
+    IValidator<AlterarPerfisRequest> alterarPerfisValidator,
+    IValidator<VincularMembroRequest> vincularMembroValidator)
 {
     public async Task<UsuarioResponse> CriarAsync(CriarUsuarioRequest request, CancellationToken cancellationToken)
     {
         await criarUsuarioValidator.ValidateAndThrowAsync(request, cancellationToken);
+
+        await GarantirMembroAtivoAsync(request.MembroId, cancellationToken);
+
+        if (await gerenciadorDeUsuarios.ObterIdDoUsuarioDoMembroAsync(request.MembroId, cancellationToken) is Guid)
+        {
+            throw new ConflitoException("Este membro já está vinculado a outro usuário.");
+        }
 
         return await gerenciadorDeUsuarios.CriarAsync(request, cancellationToken);
     }
@@ -43,6 +54,23 @@ public sealed class UsuarioService(
         return await gerenciadorDeUsuarios.AlterarPerfisAsync(id, request.Perfis, cancellationToken);
     }
 
+    public async Task<UsuarioResponse> VincularMembroAsync(Guid id, VincularMembroRequest request, CancellationToken cancellationToken)
+    {
+        await vincularMembroValidator.ValidateAndThrowAsync(request, cancellationToken);
+
+        await ObterExistenteAsync(id, cancellationToken);
+        await GarantirMembroAtivoAsync(request.MembroId, cancellationToken);
+
+        Guid? usuarioDoMembro = await gerenciadorDeUsuarios.ObterIdDoUsuarioDoMembroAsync(request.MembroId, cancellationToken);
+
+        if (usuarioDoMembro is Guid outroUsuario && outroUsuario != id)
+        {
+            throw new ConflitoException("Este membro já está vinculado a outro usuário.");
+        }
+
+        return await gerenciadorDeUsuarios.VincularMembroAsync(id, request.MembroId, cancellationToken);
+    }
+
     private async Task<UsuarioResponse> ObterExistenteAsync(Guid id, CancellationToken cancellationToken)
     {
         UsuarioResponse? usuario = await gerenciadorDeUsuarios.ObterPorIdAsync(id, cancellationToken);
@@ -53,5 +81,20 @@ public sealed class UsuarioService(
         }
 
         return usuario;
+    }
+
+    private async Task GarantirMembroAtivoAsync(Guid membroId, CancellationToken cancellationToken)
+    {
+        Membro? membro = await membroRepository.ObterPorIdAsync(membroId, cancellationToken);
+
+        if (membro is null)
+        {
+            throw new NaoEncontradoException($"Membro '{membroId}' não encontrado.");
+        }
+
+        if (!membro.Ativo)
+        {
+            throw new DomainException("Não é possível vincular um usuário a um membro desativado.");
+        }
     }
 }

@@ -381,6 +381,9 @@ namespace Temple.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset?>("LockoutEnd")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<Guid?>("MembroId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("Nome")
                         .IsRequired()
                         .HasMaxLength(150)
@@ -414,6 +417,10 @@ namespace Temple.Infrastructure.Persistence.Migrations
                         .HasColumnType("nvarchar(256)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("MembroId")
+                        .IsUnique()
+                        .HasFilter("[MembroId] IS NOT NULL");
 
                     b.HasIndex("NormalizedEmail")
                         .HasDatabaseName("EmailIndex");
@@ -503,6 +510,14 @@ namespace Temple.Infrastructure.Persistence.Migrations
                         .HasForeignKey("IgrejaId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Temple.Infrastructure.Identidade.Usuario", b =>
+                {
+                    b.HasOne("Temple.Domain.Entities.Membro", null)
+                        .WithOne()
+                        .HasForeignKey("Temple.Infrastructure.Identidade.Usuario", "MembroId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("Temple.Domain.Entities.Igreja", b =>

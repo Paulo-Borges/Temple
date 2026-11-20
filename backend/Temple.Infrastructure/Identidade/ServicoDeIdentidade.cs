@@ -55,6 +55,7 @@ internal sealed class ServicoDeIdentidade(UserManager<Usuario> userManager) : IS
 
         IList<string> papeis = await userManager.GetRolesAsync(usuario);
 
-        return new UsuarioAutenticado(usuario.Id, usuario.Nome, email, ConversorDePerfis.ParaPerfis(papeis));
+               return new UsuarioAutenticado(usuario.Id, usuario.Nome, email, usuario.MembroId, ConversorDePerfis.ParaPerfis(papeis));
+
     }
 }

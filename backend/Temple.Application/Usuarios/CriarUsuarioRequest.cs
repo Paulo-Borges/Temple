@@ -6,4 +6,5 @@ public sealed record CriarUsuarioRequest(
     string Nome,
     string Email,
     string Senha,
+     Guid MembroId,
     IReadOnlyList<Perfil> Perfis);

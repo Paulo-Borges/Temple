@@ -15,6 +15,7 @@ internal sealed class GerenciadorDeUsuarios(UserManager<Usuario> userManager, Te
     public async Task<UsuarioResponse> CriarAsync(CriarUsuarioRequest request, CancellationToken cancellationToken)
     {
         Usuario usuario = new(request.Nome, request.Email);
+         usuario.VincularMembro(request.MembroId);
 
         await using IDbContextTransaction transacao = await context.Database.BeginTransactionAsync(cancellationToken);
 
@@ -88,6 +89,39 @@ internal sealed class GerenciadorDeUsuarios(UserManager<Usuario> userManager, Te
         return await ParaResponseAsync(usuario);
     }
 
+        public async Task<Guid?> ObterIdDoUsuarioDoMembroAsync(Guid membroId, CancellationToken cancellationToken)
+    {
+        Usuario? usuario = await userManager.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(usuario => usuario.MembroId == membroId, cancellationToken);
+
+        if (usuario is null)
+        {
+            return null;
+        }
+
+        return usuario.Id;
+    }
+
+    public async Task<UsuarioResponse> VincularMembroAsync(Guid id, Guid membroId, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        Usuario? usuario = await userManager.FindByIdAsync(id.ToString());
+
+        if (usuario is null)
+        {
+            throw new InvalidOperationException($"O usuário '{id}' deveria existir.");
+        }
+
+        usuario.VincularMembro(membroId);
+
+        GarantirSucesso(await userManager.UpdateAsync(usuario));
+
+        return await ParaResponseAsync(usuario);
+    }
+
+
     private async Task<UsuarioResponse> ParaResponseAsync(Usuario usuario)
     {
         if (usuario.Email is not string email)
@@ -97,7 +131,8 @@ internal sealed class GerenciadorDeUsuarios(UserManager<Usuario> userManager, Te
 
         IList<string> papeis = await userManager.GetRolesAsync(usuario);
 
-        return new UsuarioResponse(usuario.Id, usuario.Nome, email, ConversorDePerfis.ParaPerfis(papeis));
+                return new UsuarioResponse(usuario.Id, usuario.Nome, email, usuario.MembroId, ConversorDePerfis.ParaPerfis(papeis));
+
     }
 
     private static void GarantirSucesso(IdentityResult resultado)

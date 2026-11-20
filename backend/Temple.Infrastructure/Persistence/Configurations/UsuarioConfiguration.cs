@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Temple.Domain.Entities;
 using Temple.Infrastructure.Identidade;
 
 namespace Temple.Infrastructure.Persistence.Configurations;
@@ -11,5 +12,10 @@ internal sealed class UsuarioConfiguration : IEntityTypeConfiguration<Usuario>
         builder.Property(usuario => usuario.Nome)
             .HasMaxLength(Usuario.TamanhoMaximoNome)
             .IsRequired();
+
+        builder.HasOne<Membro>()
+            .WithOne()
+            .HasForeignKey<Usuario>(usuario => usuario.MembroId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

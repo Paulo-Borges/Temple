@@ -13,4 +13,7 @@ public interface IGerenciadorDeUsuarios
     Task<int> ContarComPerfilAsync(Perfil perfil, CancellationToken cancellationToken);
 
     Task<UsuarioResponse> AlterarPerfisAsync(Guid id, IReadOnlyList<Perfil> perfis, CancellationToken cancellationToken);
+      Task<Guid?> ObterIdDoUsuarioDoMembroAsync(Guid membroId, CancellationToken cancellationToken);
+
+    Task<UsuarioResponse> VincularMembroAsync(Guid id, Guid membroId, CancellationToken cancellationToken);
 }

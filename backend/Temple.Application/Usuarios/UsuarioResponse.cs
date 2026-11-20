@@ -6,4 +6,5 @@ public sealed record UsuarioResponse(
     Guid Id,
     string Nome,
     string Email,
+    Guid? MembroId,
     IReadOnlyList<Perfil> Perfis);

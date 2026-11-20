@@ -31,7 +31,8 @@ public sealed class AutenticacaoService(
             throw new NaoAutorizadoException("O usuário do token não existe mais.");
         }
 
-                return new UsuarioLogadoResponse(usuario.Id, usuario.Nome, usuario.Email, usuario.Perfis);
+                    return new UsuarioLogadoResponse(usuario.Id, usuario.Nome, usuario.Email, usuario.MembroId, usuario.Perfis);
+
 
     }
 }

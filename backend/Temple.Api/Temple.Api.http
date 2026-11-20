@@ -237,6 +237,7 @@ Content-Type: application/json
   "nome": "Maria da Secretaria",
   "email": "secretaria@temple.local",
   "senha": "{{senhaInicial}}",
+  "membroId": "{{criarMembro.response.body.$.id}}",
   "perfis": ["Secretario"]
 }
 
@@ -256,3 +257,20 @@ Content-Type: application/json
 {
   "perfis": ["Secretario", "Tesoureiro"]
 }
+
+
+### Vincular um usuário que ainda não tem membro (o REST Client pede os dois ids)
+# @prompt usuarioId Id do usuário
+# @prompt membroId Id do membro
+PUT {{baseUrl}}/api/usuarios/{{usuarioId}}/membro
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "membroId": "{{membroId}}"
+}
+
+### Meu cadastro de membro (qualquer usuário logado)
+GET {{baseUrl}}/api/membros/meu-cadastro
+Authorization: Bearer {{token}}
+

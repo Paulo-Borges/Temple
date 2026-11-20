@@ -35,6 +35,18 @@ public sealed class MembrosController(MembroService membroService) : ControllerB
         return Ok(pagina);
     }
 
+        [HttpGet("meu-cadastro")]
+    [ProducesResponseType<MembroResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<MembroResponse>> ObterMeuCadastro(CancellationToken cancellationToken)
+    {
+        MembroResponse membro = await membroService.ObterMeuCadastroAsync(User.ObterIdDoUsuario(), cancellationToken);
+
+        return Ok(membro);
+    }
+
+
     [Authorize(Policy = Permissoes.VerMembros)]
     [HttpGet("{id:guid}")]
     [ProducesResponseType<MembroResponse>(StatusCodes.Status200OK)]

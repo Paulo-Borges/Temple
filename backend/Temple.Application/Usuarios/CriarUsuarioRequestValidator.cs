@@ -18,6 +18,9 @@ public sealed class CriarUsuarioRequestValidator : AbstractValidator<CriarUsuari
         RuleFor(request => request.Senha)
             .NotEmpty();
 
+            RuleFor(request => request.MembroId)
+            .NotEmpty();
+
         RuleFor(request => request.Perfis).PerfisDoUsuario();
     }
 }

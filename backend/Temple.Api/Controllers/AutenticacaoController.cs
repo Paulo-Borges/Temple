@@ -1,7 +1,6 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.JsonWebTokens;
+using Temple.Api.Autorizacao;
 using Temple.Application.Autenticacao;
 
 namespace Temple.Api.Controllers;
@@ -27,14 +26,7 @@ public sealed class AutenticacaoController(AutenticacaoService autenticacaoServi
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<UsuarioLogadoResponse>> ObterUsuarioLogado(CancellationToken cancellationToken)
     {
-        Claim? claimDoUsuario = User.FindFirst(JwtRegisteredClaimNames.Sub);
-
-        if (claimDoUsuario is null || !Guid.TryParse(claimDoUsuario.Value, out Guid usuarioId))
-        {
-            throw new InvalidOperationException("O token não contém o identificador do usuário.");
-        }
-
-        UsuarioLogadoResponse usuario = await autenticacaoService.ObterUsuarioLogadoAsync(usuarioId, cancellationToken);
+        UsuarioLogadoResponse usuario = await autenticacaoService.ObterUsuarioLogadoAsync(User.ObterIdDoUsuario(), cancellationToken);
 
         return Ok(usuario);
     }
