@@ -1,5 +1,8 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Temple.Api.Autorizacao;
 using Temple.Application.Igrejas;
+
 
 namespace Temple.Api.Controllers;
 
@@ -7,6 +10,7 @@ namespace Temple.Api.Controllers;
 [Route("api/igrejas")]
 public sealed class IgrejasController(IgrejaService igrejaService) : ControllerBase
 {
+    [Authorize(Policy = Permissoes.GerenciarIgrejas)]
     [HttpPost]
     [ProducesResponseType<IgrejaResponse>(StatusCodes.Status201Created)]
     [ProducesResponseType<HttpValidationProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -18,7 +22,7 @@ public sealed class IgrejasController(IgrejaService igrejaService) : ControllerB
 
         return CreatedAtAction(nameof(ObterPorId), new { id = matriz.Id }, matriz);
     }
-
+    [Authorize(Policy = Permissoes.GerenciarIgrejas)]
     [HttpPost("{matrizId:guid}/filiais")]
     [ProducesResponseType<IgrejaResponse>(StatusCodes.Status201Created)]
     [ProducesResponseType<HttpValidationProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -32,6 +36,7 @@ public sealed class IgrejasController(IgrejaService igrejaService) : ControllerB
         return CreatedAtAction(nameof(ObterPorId), new { id = filial.Id }, filial);
     }
 
+    [Authorize(Policy = Permissoes.VerIgrejas)]
     [HttpGet("{id:guid}")]
     [ProducesResponseType<IgrejaResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
@@ -42,7 +47,8 @@ public sealed class IgrejasController(IgrejaService igrejaService) : ControllerB
         return Ok(igreja);
     }
 
-        [HttpGet]
+    [Authorize(Policy = Permissoes.VerIgrejas)]
+    [HttpGet]
     [ProducesResponseType<IReadOnlyList<IgrejaResponse>>(StatusCodes.Status200OK)]
     [ProducesResponseType<HttpValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<IReadOnlyList<IgrejaResponse>>> Listar([FromQuery] bool? ativa, CancellationToken cancellationToken)
@@ -52,6 +58,7 @@ public sealed class IgrejasController(IgrejaService igrejaService) : ControllerB
         return Ok(igrejas);
     }
 
+    [Authorize(Policy = Permissoes.VerIgrejas)]
     [HttpGet("{id:guid}/filiais")]
     [ProducesResponseType<IReadOnlyList<IgrejaResponse>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
@@ -62,6 +69,7 @@ public sealed class IgrejasController(IgrejaService igrejaService) : ControllerB
         return Ok(filiais);
     }
 
+    [Authorize(Policy = Permissoes.GerenciarIgrejas)]
     [HttpPut("{id:guid}")]
     [ProducesResponseType<IgrejaResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<HttpValidationProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -73,6 +81,7 @@ public sealed class IgrejasController(IgrejaService igrejaService) : ControllerB
         return Ok(igreja);
     }
 
+    [Authorize(Policy = Permissoes.GerenciarIgrejas)]
     [HttpPost("{id:guid}/ativar")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
@@ -84,6 +93,7 @@ public sealed class IgrejasController(IgrejaService igrejaService) : ControllerB
         return NoContent();
     }
 
+    [Authorize(Policy = Permissoes.GerenciarIgrejas)]
     [HttpPost("{id:guid}/desativar")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]

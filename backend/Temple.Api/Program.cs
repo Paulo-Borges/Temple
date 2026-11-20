@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
+using Temple.Api.Autorizacao;
 using Temple.Api.Configuracao;
 using Temple.Api.Tratamento;
 using Temple.Application;
@@ -37,14 +38,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidAlgorithms = [SecurityAlgorithms.HmacSha256],
             ValidateLifetime = true,
             ClockSkew = TimeSpan.FromMinutes(1),
-            NameClaimType = JwtRegisteredClaimNames.Name
+            NameClaimType = JwtRegisteredClaimNames.Name,
+             RoleClaimType = ClaimsDoTemple.Perfil
         };
     });
 
 builder.Services.AddAuthorizationBuilder()
     .SetFallbackPolicy(new AuthorizationPolicyBuilder()
         .RequireAuthenticatedUser()
-        .Build());
+        .Build())
+        .AdicionarPoliticasDoTemple();
 
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<TratadorGlobalDeExcecoes>();
@@ -60,6 +63,7 @@ builder.Services.AddControllers()
 builder.Services.AddOpenApi(options => options.AddDocumentTransformer<SegurancaBearerNoOpenApi>());
 
 var app = builder.Build();
+await app.Services.CriarPerfisAsync();
 
 if (app.Environment.IsDevelopment())
 {

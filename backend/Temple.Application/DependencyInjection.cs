@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Temple.Application.Igrejas;
 using Temple.Application.Membros;
 using Temple.Application.Autenticacao;
+using Temple.Application.Usuarios;
 
 namespace Temple.Application;
 
@@ -18,7 +19,7 @@ public static class DependencyInjection
         services.AddScoped<IgrejaService>();
         services.AddScoped<MembroService>();
         services.AddScoped<AutenticacaoService>();
-
+        services.AddScoped<UsuarioService>();
 
         return services;
     }

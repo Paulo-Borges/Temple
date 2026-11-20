@@ -222,3 +222,37 @@ Authorization: Bearer {{token}}
 ### Ativar o membro cadastrado acima
 POST {{baseUrl}}/api/membros/{{criarMembro.response.body.$.id}}/ativar
 Authorization: Bearer {{token}}
+
+
+### ===================== USUÁRIOS (só o Pastor) =====================
+
+### Criar a Secretária (o REST Client pede a senha inicial)
+# @name criarUsuario
+# @prompt senhaInicial Senha inicial do novo usuário
+POST {{baseUrl}}/api/usuarios
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Maria da Secretaria",
+  "email": "secretaria@temple.local",
+  "senha": "{{senhaInicial}}",
+  "perfis": ["Secretario"]
+}
+
+### Listar usuários
+GET {{baseUrl}}/api/usuarios
+Authorization: Bearer {{token}}
+
+### Obter o usuário criado acima
+GET {{baseUrl}}/api/usuarios/{{criarUsuario.response.body.$.id}}
+Authorization: Bearer {{token}}
+
+### Trocar os perfis do usuário criado acima (vale a partir do próximo login dele)
+PUT {{baseUrl}}/api/usuarios/{{criarUsuario.response.body.$.id}}/perfis
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "perfis": ["Secretario", "Tesoureiro"]
+}

@@ -8,6 +8,10 @@ using Temple.Infrastructure.Identidade;
 using Temple.Infrastructure.Persistence;
 using Temple.Infrastructure.Persistence.Repositorios;
 using Temple.Infrastructure.Persistence.Seed;
+using Microsoft.AspNetCore.Identity;
+using Temple.Application.Usuarios;
+
+
 
 namespace Temple.Infrastructure;
 
@@ -46,11 +50,14 @@ public static class DependencyInjection
                 options.Lockout.MaxFailedAccessAttempts = 5;
                 options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
             })
+            .AddRoles<IdentityRole<Guid>>()
+            .AddErrorDescriber<DescritorDeErrosEmPortugues>()
             .AddEntityFrameworkStores<TempleDbContext>();
 
         services.AddSingleton(opcoesJwt);
         services.AddSingleton<IGeradorDeToken, GeradorDeTokenJwt>();
         services.AddScoped<IServicoDeIdentidade, ServicoDeIdentidade>();
+         services.AddScoped<IGerenciadorDeUsuarios, GerenciadorDeUsuarios>();
 
         services.AddScoped<IIgrejaRepository, IgrejaRepository>();
         services.AddScoped<IMembroRepository, MembroRepository>();

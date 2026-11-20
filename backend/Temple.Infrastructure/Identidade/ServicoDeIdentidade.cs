@@ -29,7 +29,7 @@ internal sealed class ServicoDeIdentidade(UserManager<Usuario> userManager) : IS
 
         await userManager.ResetAccessFailedCountAsync(usuario);
 
-        return ParaUsuarioAutenticado(usuario);
+        return await ParaUsuarioAutenticadoAsync(usuario);
     }
 
     public async Task<UsuarioAutenticado?> ObterPorIdAsync(Guid id, CancellationToken cancellationToken)
@@ -43,16 +43,18 @@ internal sealed class ServicoDeIdentidade(UserManager<Usuario> userManager) : IS
             return null;
         }
 
-        return ParaUsuarioAutenticado(usuario);
+        return await ParaUsuarioAutenticadoAsync(usuario);
     }
 
-    private static UsuarioAutenticado ParaUsuarioAutenticado(Usuario usuario)
+    private async Task<UsuarioAutenticado> ParaUsuarioAutenticadoAsync(Usuario usuario)
     {
         if (usuario.Email is not string email)
         {
             throw new InvalidOperationException($"O usuário '{usuario.Id}' está sem e-mail.");
         }
 
-        return new UsuarioAutenticado(usuario.Id, usuario.Nome, email);
+        IList<string> papeis = await userManager.GetRolesAsync(usuario);
+
+        return new UsuarioAutenticado(usuario.Id, usuario.Nome, email, ConversorDePerfis.ParaPerfis(papeis));
     }
 }

@@ -1,10 +1,13 @@
 using Microsoft.AspNetCore.Identity;
+using Temple.Application.Usuarios;
+
 
 namespace Temple.Infrastructure.Identidade;
 
 public sealed class Usuario : IdentityUser<Guid>
 {
-    public const int TamanhoMaximoNome = 150;
+        public const int TamanhoMaximoNome = RegrasDoUsuario.TamanhoMaximoNome;
+
 
     public string Nome { get; private set; }
 

@@ -1,6 +1,9 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Temple.Api.Autorizacao;
 using Temple.Application.Comum;
 using Temple.Application.Membros;
+
 
 namespace Temple.Api.Controllers;
 
@@ -8,6 +11,7 @@ namespace Temple.Api.Controllers;
 [Route("api/membros")]
 public sealed class MembrosController(MembroService membroService) : ControllerBase
 {
+    [Authorize(Policy = Permissoes.GerenciarMembros)]
     [HttpPost]
     [ProducesResponseType<MembroResponse>(StatusCodes.Status201Created)]
     [ProducesResponseType<HttpValidationProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -20,6 +24,7 @@ public sealed class MembrosController(MembroService membroService) : ControllerB
         return CreatedAtAction(nameof(ObterPorId), new { id = membro.Id }, membro);
     }
 
+    [Authorize(Policy = Permissoes.VerMembros)]
     [HttpGet]
     [ProducesResponseType<PaginaResponse<MembroResponse>>(StatusCodes.Status200OK)]
     [ProducesResponseType<HttpValidationProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -30,6 +35,7 @@ public sealed class MembrosController(MembroService membroService) : ControllerB
         return Ok(pagina);
     }
 
+    [Authorize(Policy = Permissoes.VerMembros)]
     [HttpGet("{id:guid}")]
     [ProducesResponseType<MembroResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
@@ -40,6 +46,7 @@ public sealed class MembrosController(MembroService membroService) : ControllerB
         return Ok(membro);
     }
 
+    [Authorize(Policy = Permissoes.GerenciarMembros)]
     [HttpPut("{id:guid}")]
     [ProducesResponseType<MembroResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<HttpValidationProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -51,6 +58,7 @@ public sealed class MembrosController(MembroService membroService) : ControllerB
         return Ok(membro);
     }
 
+    [Authorize(Policy = Permissoes.GerenciarMembros)]
     [HttpPost("{id:guid}/ativar")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
@@ -62,6 +70,7 @@ public sealed class MembrosController(MembroService membroService) : ControllerB
         return NoContent();
     }
 
+    [Authorize(Policy = Permissoes.GerenciarMembros)]
     [HttpPost("{id:guid}/desativar")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
@@ -72,6 +81,7 @@ public sealed class MembrosController(MembroService membroService) : ControllerB
         return NoContent();
     }
 
+    [Authorize(Policy = Permissoes.PromoverMembros)]
     [HttpPost("{id:guid}/promocoes")]
     [ProducesResponseType<MembroResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<HttpValidationProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -84,6 +94,7 @@ public sealed class MembrosController(MembroService membroService) : ControllerB
         return Ok(membro);
     }
 
+    [Authorize(Policy = Permissoes.VerMembros)]
     [HttpGet("{id:guid}/historico-cargos")]
     [ProducesResponseType<IReadOnlyList<HistoricoCargoResponse>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]

@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using Temple.Application.Autenticacao;
+using Temple.Domain.Enums;
 
 namespace Temple.Infrastructure.Identidade;
 
@@ -14,13 +15,20 @@ internal sealed class GeradorDeTokenJwt(OpcoesJwt opcoes) : IGeradorDeToken
         DateTimeOffset agora = DateTimeOffset.UtcNow;
         DateTimeOffset expiraEm = agora.AddHours(opcoes.ExpiracaoEmHoras);
 
-        ClaimsIdentity identidade = new(
+        List<Claim> claims =
         [
             new Claim(JwtRegisteredClaimNames.Sub, usuario.Id.ToString()),
             new Claim(JwtRegisteredClaimNames.Email, usuario.Email),
             new Claim(JwtRegisteredClaimNames.Name, usuario.Nome),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-        ]);
+        ];
+
+        foreach (Perfil perfil in usuario.Perfis)
+        {
+            claims.Add(new Claim(ClaimsDoTemple.Perfil, ConversorDePerfis.ParaNomeDoPapel(perfil)));
+        }
+
+        ClaimsIdentity identidade = new(claims);
 
         SecurityTokenDescriptor descritor = new()
         {
