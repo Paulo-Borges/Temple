@@ -16,7 +16,10 @@ internal static class PoliticasDeAutorizacao
                 Perfil.Lider, Perfil.LiderVaroes, Perfil.LiderIrmas, Perfil.LiderJovens, Perfil.LiderCriancas)
             .AdicionarPolitica(Permissoes.GerenciarMembros, Perfil.Pastor, Perfil.Secretario)
             .AdicionarPolitica(Permissoes.PromoverMembros, Perfil.Pastor)
-            .AdicionarPolitica(Permissoes.GerenciarUsuarios, Perfil.Pastor);
+            .AdicionarPolitica(Permissoes.GerenciarUsuarios, Perfil.Pastor)
+            .AdicionarPolitica(Permissoes.VerAniversariantes,
+                Perfil.Pastor, Perfil.Secretario, Perfil.Tesoureiro,
+                Perfil.Lider, Perfil.LiderVaroes, Perfil.LiderIrmas, Perfil.LiderJovens, Perfil.LiderCriancas);
     }
 
     private static AuthorizationBuilder AdicionarPolitica(this AuthorizationBuilder autorizacao, string permissao, params Perfil[] perfis)

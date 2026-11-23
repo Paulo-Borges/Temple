@@ -224,6 +224,26 @@ POST {{baseUrl}}/api/membros/{{criarMembro.response.body.$.id}}/ativar
 Authorization: Bearer {{token}}
 
 
+
+### ===================== ANIVERSARIANTES =====================
+
+### Aniversariantes do mês atual
+GET {{baseUrl}}/api/membros/aniversariantes
+Authorization: Bearer {{token}}
+
+### Aniversariantes de março
+GET {{baseUrl}}/api/membros/aniversariantes?mes=3
+Authorization: Bearer {{token}}
+
+### Aniversariantes do mês atual na primeira igreja ativa
+GET {{baseUrl}}/api/membros/aniversariantes?igrejaId={{igrejasAtivas.response.body.$[0].id}}
+Authorization: Bearer {{token}}
+
+### Mês inválido (400)
+GET {{baseUrl}}/api/membros/aniversariantes?mes=13
+Authorization: Bearer {{token}}
+
+
 ### ===================== USUÁRIOS (só o Pastor) =====================
 
 ### Criar a Secretária (o REST Client pede a senha inicial)

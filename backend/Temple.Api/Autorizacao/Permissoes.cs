@@ -10,4 +10,6 @@ internal static class Permissoes
     public const string PromoverMembros = "Membros.Promover";
 
     public const string GerenciarUsuarios = "Usuarios.Gerenciar";
+    
+    public const string VerAniversariantes = "Aniversariantes.Ver";
 }

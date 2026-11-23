@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Temple.Application.Aniversariantes;
 using Temple.Application.Comum.Acesso;
 using Temple.Application.Comum.Persistencia;
 using Temple.Application.Membros;
@@ -18,25 +19,7 @@ internal sealed class MembroRepository(TempleDbContext context) : IMembroReposit
 
        public async Task<ResultadoPaginado<Membro>> ListarAsync(ListarMembrosRequest filtro, EscopoDeAcesso escopo, CancellationToken cancellationToken)
     {
-        IQueryable<Membro> consulta = context.Membros.AsNoTracking();
-
-                if (!escopo.Total)
-        {
-            IReadOnlyList<Guid> igrejaIds = escopo.IgrejaIds;
-            consulta = consulta.Where(membro => igrejaIds.Contains(membro.IgrejaId));
-        }
-
-        if (escopo.Grupos.Count > 0)
-        {
-            List<GrupoMembro?> grupos = [];
-
-            foreach (GrupoMembro grupo in escopo.Grupos)
-            {
-                grupos.Add(grupo);
-            }
-
-            consulta = consulta.Where(membro => grupos.Contains(membro.Grupo));
-        }
+        IQueryable<Membro> consulta = AplicarEscopo(context.Membros.AsNoTracking(), escopo);
 
         if (filtro.IgrejaId is Guid igrejaId)
         {
@@ -71,8 +54,61 @@ internal sealed class MembroRepository(TempleDbContext context) : IMembroReposit
         return new ResultadoPaginado<Membro>(itens, totalItens);
     }
 
+        public async Task<IReadOnlyList<AniversarianteDoMes>> ListarAniversariantesAsync(int mes, Guid? igrejaId, EscopoDeAcesso escopo, CancellationToken cancellationToken)
+    {
+        IQueryable<Membro> consulta = AplicarEscopo(context.Membros.AsNoTracking(), escopo)
+            .Where(membro => membro.Ativo && membro.DataNascimento.Month == mes);
+
+        if (igrejaId is Guid id)
+        {
+            consulta = consulta.Where(membro => membro.IgrejaId == id);
+        }
+
+        return await consulta
+            .Join(
+                context.Igrejas,
+                membro => membro.IgrejaId,
+                igreja => igreja.Id,
+                (membro, igreja) => new { Membro = membro, NomeDaIgreja = igreja.Nome })
+            .OrderBy(item => item.Membro.DataNascimento.Day)
+            .ThenBy(item => item.Membro.Nome)
+            .Select(item => new AniversarianteDoMes(
+                item.Membro.Id,
+                item.Membro.Matricula,
+                item.Membro.Nome,
+                item.Membro.DataNascimento,
+                item.Membro.IgrejaId,
+                item.NomeDaIgreja,
+                item.Membro.Grupo))
+            .ToListAsync(cancellationToken);
+    }
+
     public void Adicionar(Membro membro)
     {
         context.Membros.Add(membro);
+    }
+
+    
+    private static IQueryable<Membro> AplicarEscopo(IQueryable<Membro> consulta, EscopoDeAcesso escopo)
+    {
+        if (!escopo.Total)
+        {
+            IReadOnlyList<Guid> igrejaIds = escopo.IgrejaIds;
+            consulta = consulta.Where(membro => igrejaIds.Contains(membro.IgrejaId));
+        }
+
+        if (escopo.Grupos.Count > 0)
+        {
+            List<GrupoMembro?> grupos = [];
+
+            foreach (GrupoMembro grupo in escopo.Grupos)
+            {
+                grupos.Add(grupo);
+            }
+
+            consulta = consulta.Where(membro => grupos.Contains(membro.Grupo));
+        }
+
+        return consulta;
     }
 }
