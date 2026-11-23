@@ -1,6 +1,7 @@
 using System.Globalization;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
+using Temple.Application.Comum.Acesso;
 using Temple.Application.Igrejas;
 using Temple.Application.Membros;
 using Temple.Application.Autenticacao;
@@ -15,7 +16,7 @@ public static class DependencyInjection
         ValidatorOptions.Global.LanguageManager.Culture = new CultureInfo("pt-BR");
 
         services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
-
+        services.AddScoped<ProvedorDeEscopo>();
         services.AddScoped<IgrejaService>();
         services.AddScoped<MembroService>();
         services.AddScoped<AutenticacaoService>();

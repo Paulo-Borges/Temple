@@ -7,6 +7,7 @@ using Temple.Api.Autorizacao;
 using Temple.Api.Configuracao;
 using Temple.Api.Tratamento;
 using Temple.Application;
+using Temple.Application.Comum.Acesso;
 using Temple.Infrastructure;
 using Temple.Infrastructure.Identidade;
 
@@ -22,6 +23,9 @@ OpcoesJwt opcoesJwt = new(
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(connectionString, builder.Environment.IsDevelopment(), opcoesJwt);
+
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IUsuarioAtual, UsuarioAtual>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>

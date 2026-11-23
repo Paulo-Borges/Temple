@@ -11,7 +11,9 @@ internal static class PoliticasDeAutorizacao
         return autorizacao
             .AdicionarPolitica(Permissoes.VerIgrejas, Perfil.Pastor, Perfil.Secretario, Perfil.Tesoureiro)
             .AdicionarPolitica(Permissoes.GerenciarIgrejas, Perfil.Pastor)
-            .AdicionarPolitica(Permissoes.VerMembros, Perfil.Pastor, Perfil.Secretario, Perfil.Tesoureiro)
+            .AdicionarPolitica(Permissoes.VerMembros,
+                Perfil.Pastor, Perfil.Secretario, Perfil.Tesoureiro,
+                Perfil.Lider, Perfil.LiderVaroes, Perfil.LiderIrmas, Perfil.LiderJovens, Perfil.LiderCriancas)
             .AdicionarPolitica(Permissoes.GerenciarMembros, Perfil.Pastor, Perfil.Secretario)
             .AdicionarPolitica(Permissoes.PromoverMembros, Perfil.Pastor)
             .AdicionarPolitica(Permissoes.GerenciarUsuarios, Perfil.Pastor);

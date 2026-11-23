@@ -1,6 +1,7 @@
 using FluentValidation;
 using Temple.Application.Autenticacao;
 using Temple.Application.Comum;
+using Temple.Application.Comum.Acesso;
 using Temple.Application.Comum.Excecoes;
 using Temple.Application.Comum.Persistencia;
 using Temple.Application.Igrejas;
@@ -13,6 +14,7 @@ public sealed class MembroService(
     IIgrejaRepository igrejaRepository,
     IUnitOfWork unitOfWork,
     IServicoDeIdentidade servicoDeIdentidade,
+     ProvedorDeEscopo provedorDeEscopo,
     IValidator<CriarMembroRequest> criarMembroValidator,
     IValidator<AtualizarMembroRequest> atualizarMembroValidator,
     IValidator<PromoverCargoRequest> promoverCargoValidator,
@@ -23,6 +25,12 @@ public sealed class MembroService(
         await criarMembroValidator.ValidateAndThrowAsync(request, cancellationToken);
 
         Igreja igreja = await ObterIgrejaAsync(request.IgrejaId, cancellationToken);
+         EscopoDeAcesso escopo = await provedorDeEscopo.ObterAsync(cancellationToken);
+
+        if (!escopo.AlcancaIgreja(igreja.Id))
+        {
+            throw new NaoEncontradoException($"Igreja '{request.IgrejaId}' não encontrada.");
+        }
         Membro membro = request.ParaMembro(igreja);
 
         membroRepository.Adicionar(membro);
@@ -52,7 +60,13 @@ public sealed class MembroService(
             throw new NaoEncontradoException("O seu usuário não está vinculado a um cadastro de membro.");
         }
 
-        Membro membro = await ObterEntidadeAsync(membroId, cancellationToken);
+                // O próprio cadastro não passa pelo escopo: qualquer perfil pode ver o seu.
+        Membro? membro = await membroRepository.ObterPorIdAsync(membroId, cancellationToken);
+
+        if (membro is null)
+        {
+            throw new NaoEncontradoException($"Membro '{membroId}' não encontrado.");
+        }
 
         return membro.ParaResponse();
     }
@@ -62,7 +76,9 @@ public sealed class MembroService(
     {
         await listarMembrosValidator.ValidateAndThrowAsync(filtro, cancellationToken);
 
-        ResultadoPaginado<Membro> resultado = await membroRepository.ListarAsync(filtro, cancellationToken);
+                EscopoDeAcesso escopo = await provedorDeEscopo.ObterAsync(cancellationToken);
+
+        ResultadoPaginado<Membro> resultado = await membroRepository.ListarAsync(filtro, escopo, cancellationToken);
 
         List<MembroResponse> itens = resultado.Itens
             .Select(membro => membro.ParaResponse())
@@ -130,11 +146,12 @@ public sealed class MembroService(
             .ToList();
     }
 
-    private async Task<Membro> ObterEntidadeAsync(Guid id, CancellationToken cancellationToken)
+       private async Task<Membro> ObterEntidadeAsync(Guid id, CancellationToken cancellationToken)
     {
         Membro? membro = await membroRepository.ObterPorIdAsync(id, cancellationToken);
+        EscopoDeAcesso escopo = await provedorDeEscopo.ObterAsync(cancellationToken);
 
-        if (membro is null)
+        if (membro is null || !escopo.AlcancaMembro(membro))
         {
             throw new NaoEncontradoException($"Membro '{id}' não encontrado.");
         }

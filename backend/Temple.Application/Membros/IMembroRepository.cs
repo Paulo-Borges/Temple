@@ -1,3 +1,4 @@
+using Temple.Application.Comum.Acesso;
 using Temple.Application.Comum.Persistencia;
 using Temple.Domain.Entities;
 
@@ -7,7 +8,7 @@ public interface IMembroRepository
 {
     Task<Membro?> ObterPorIdAsync(Guid id, CancellationToken cancellationToken);
 
-    Task<ResultadoPaginado<Membro>> ListarAsync(ListarMembrosRequest filtro, CancellationToken cancellationToken);
+     Task<ResultadoPaginado<Membro>> ListarAsync(ListarMembrosRequest filtro, EscopoDeAcesso escopo, CancellationToken cancellationToken);
 
     void Adicionar(Membro membro);
 }

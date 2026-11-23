@@ -17,6 +17,7 @@ internal sealed class TratadorGlobalDeExcecoes(IProblemDetailsService problemDet
             DomainException => CriarProblema(StatusCodes.Status422UnprocessableEntity, "Regra de negócio violada.", exception.Message),
             NaoEncontradoException => CriarProblema(StatusCodes.Status404NotFound, "Recurso não encontrado.", exception.Message),
             NaoAutorizadoException => CriarProblema(StatusCodes.Status401Unauthorized, "Não autorizado.", exception.Message),
+                        AcessoNegadoException => CriarProblema(StatusCodes.Status403Forbidden, "Acesso negado.", exception.Message),
             ConflitoException => CriarProblema(StatusCodes.Status409Conflict, "Conflito com um recurso existente.", exception.Message),
             _ => null
         };

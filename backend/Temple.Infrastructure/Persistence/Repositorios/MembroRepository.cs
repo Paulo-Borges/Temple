@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Temple.Application.Comum.Acesso;
 using Temple.Application.Comum.Persistencia;
 using Temple.Application.Membros;
 using Temple.Domain.Entities;
@@ -15,9 +16,27 @@ internal sealed class MembroRepository(TempleDbContext context) : IMembroReposit
             .FirstOrDefaultAsync(membro => membro.Id == id, cancellationToken);
     }
 
-    public async Task<ResultadoPaginado<Membro>> ListarAsync(ListarMembrosRequest filtro, CancellationToken cancellationToken)
+       public async Task<ResultadoPaginado<Membro>> ListarAsync(ListarMembrosRequest filtro, EscopoDeAcesso escopo, CancellationToken cancellationToken)
     {
         IQueryable<Membro> consulta = context.Membros.AsNoTracking();
+
+                if (!escopo.Total)
+        {
+            IReadOnlyList<Guid> igrejaIds = escopo.IgrejaIds;
+            consulta = consulta.Where(membro => igrejaIds.Contains(membro.IgrejaId));
+        }
+
+        if (escopo.Grupos.Count > 0)
+        {
+            List<GrupoMembro?> grupos = [];
+
+            foreach (GrupoMembro grupo in escopo.Grupos)
+            {
+                grupos.Add(grupo);
+            }
+
+            consulta = consulta.Where(membro => grupos.Contains(membro.Grupo));
+        }
 
         if (filtro.IgrejaId is Guid igrejaId)
         {

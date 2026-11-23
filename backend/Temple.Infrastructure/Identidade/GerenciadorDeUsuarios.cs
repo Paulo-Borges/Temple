@@ -3,8 +3,10 @@ using FluentValidation.Results;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using Temple.Application.Comum.Acesso;
 using Temple.Application.Comum.Excecoes;
 using Temple.Application.Usuarios;
+using Temple.Domain.Entities;
 using Temple.Domain.Enums;
 using Temple.Infrastructure.Persistence;
 
@@ -41,9 +43,19 @@ internal sealed class GerenciadorDeUsuarios(UserManager<Usuario> userManager, Te
         return await ParaResponseAsync(usuario);
     }
 
-    public async Task<IReadOnlyList<UsuarioResponse>> ListarAsync(CancellationToken cancellationToken)
+        public async Task<IReadOnlyList<UsuarioResponse>> ListarAsync(EscopoDeAcesso escopo, CancellationToken cancellationToken)
     {
-        List<Usuario> usuarios = await userManager.Users
+        IQueryable<Usuario> consulta = userManager.Users;
+
+        if (!escopo.Total)
+        {
+            IReadOnlyList<Guid> igrejaIds = escopo.IgrejaIds;
+
+            consulta = consulta.Where(usuario => context.Set<Membro>()
+                .Any(membro => membro.Id == usuario.MembroId && igrejaIds.Contains(membro.IgrejaId)));
+        }
+
+        List<Usuario> usuarios = await consulta
             .OrderBy(usuario => usuario.Nome)
             .ThenBy(usuario => usuario.Email)
             .ToListAsync(cancellationToken);

@@ -14,6 +14,7 @@ public sealed class IgrejasController(IgrejaService igrejaService) : ControllerB
     [HttpPost]
     [ProducesResponseType<IgrejaResponse>(StatusCodes.Status201Created)]
     [ProducesResponseType<HttpValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
     public async Task<ActionResult<IgrejaResponse>> CriarMatriz(CriarIgrejaRequest request, CancellationToken cancellationToken)
@@ -22,6 +23,7 @@ public sealed class IgrejasController(IgrejaService igrejaService) : ControllerB
 
         return CreatedAtAction(nameof(ObterPorId), new { id = matriz.Id }, matriz);
     }
+
     [Authorize(Policy = Permissoes.GerenciarIgrejas)]
     [HttpPost("{matrizId:guid}/filiais")]
     [ProducesResponseType<IgrejaResponse>(StatusCodes.Status201Created)]

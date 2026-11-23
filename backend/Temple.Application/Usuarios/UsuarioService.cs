@@ -1,4 +1,5 @@
 using FluentValidation;
+using Temple.Application.Comum.Acesso;
 using Temple.Application.Comum.Excecoes;
 using Temple.Application.Membros;
 using Temple.Domain.Entities;
@@ -10,6 +11,7 @@ namespace Temple.Application.Usuarios;
 public sealed class UsuarioService(
     IGerenciadorDeUsuarios gerenciadorDeUsuarios,
     IMembroRepository membroRepository,
+    ProvedorDeEscopo provedorDeEscopo,
     IValidator<CriarUsuarioRequest> criarUsuarioValidator,
     IValidator<AlterarPerfisRequest> alterarPerfisValidator,
     IValidator<VincularMembroRequest> vincularMembroValidator)
@@ -18,7 +20,7 @@ public sealed class UsuarioService(
     {
         await criarUsuarioValidator.ValidateAndThrowAsync(request, cancellationToken);
 
-        await GarantirMembroAtivoAsync(request.MembroId, cancellationToken);
+        await GarantirMembroVinculavelAsync(request.MembroId, cancellationToken);
 
         if (await gerenciadorDeUsuarios.ObterIdDoUsuarioDoMembroAsync(request.MembroId, cancellationToken) is Guid)
         {
@@ -33,9 +35,11 @@ public sealed class UsuarioService(
         return await ObterExistenteAsync(id, cancellationToken);
     }
 
-    public Task<IReadOnlyList<UsuarioResponse>> ListarAsync(CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<UsuarioResponse>> ListarAsync(CancellationToken cancellationToken)
     {
-        return gerenciadorDeUsuarios.ListarAsync(cancellationToken);
+        EscopoDeAcesso escopo = await provedorDeEscopo.ObterAsync(cancellationToken);
+
+        return await gerenciadorDeUsuarios.ListarAsync(escopo, cancellationToken);
     }
 
     public async Task<UsuarioResponse> AlterarPerfisAsync(Guid id, AlterarPerfisRequest request, CancellationToken cancellationToken)
@@ -59,7 +63,7 @@ public sealed class UsuarioService(
         await vincularMembroValidator.ValidateAndThrowAsync(request, cancellationToken);
 
         await ObterExistenteAsync(id, cancellationToken);
-        await GarantirMembroAtivoAsync(request.MembroId, cancellationToken);
+        await GarantirMembroVinculavelAsync(request.MembroId, cancellationToken);
 
         Guid? usuarioDoMembro = await gerenciadorDeUsuarios.ObterIdDoUsuarioDoMembroAsync(request.MembroId, cancellationToken);
 
@@ -75,7 +79,7 @@ public sealed class UsuarioService(
     {
         UsuarioResponse? usuario = await gerenciadorDeUsuarios.ObterPorIdAsync(id, cancellationToken);
 
-        if (usuario is null)
+        if (usuario is null || !await EstaNoAlcanceAsync(usuario, cancellationToken))
         {
             throw new NaoEncontradoException($"Usuário '{id}' não encontrado.");
         }
@@ -83,11 +87,31 @@ public sealed class UsuarioService(
         return usuario;
     }
 
-    private async Task GarantirMembroAtivoAsync(Guid membroId, CancellationToken cancellationToken)
+    private async Task<bool> EstaNoAlcanceAsync(UsuarioResponse usuario, CancellationToken cancellationToken)
     {
+        EscopoDeAcesso escopo = await provedorDeEscopo.ObterAsync(cancellationToken);
+
+        if (escopo.Total)
+        {
+            return true;
+        }
+
+        if (usuario.MembroId is not Guid membroId)
+        {
+            return false;
+        }
+
         Membro? membro = await membroRepository.ObterPorIdAsync(membroId, cancellationToken);
 
-        if (membro is null)
+        return membro is not null && escopo.AlcancaMembro(membro);
+    }
+
+    private async Task GarantirMembroVinculavelAsync(Guid membroId, CancellationToken cancellationToken)
+    {
+        Membro? membro = await membroRepository.ObterPorIdAsync(membroId, cancellationToken);
+        EscopoDeAcesso escopo = await provedorDeEscopo.ObterAsync(cancellationToken);
+
+        if (membro is null || !escopo.AlcancaMembro(membro))
         {
             throw new NaoEncontradoException($"Membro '{membroId}' não encontrado.");
         }

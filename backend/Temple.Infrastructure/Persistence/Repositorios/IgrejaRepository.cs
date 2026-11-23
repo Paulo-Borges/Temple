@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Temple.Application.Comum.Acesso;
 using Temple.Application.Igrejas;
 using Temple.Domain.Entities;
 
@@ -14,9 +15,15 @@ internal sealed class IgrejaRepository(TempleDbContext context) : IIgrejaReposit
             .FirstOrDefaultAsync(igreja => igreja.Id == id, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<Igreja>> ListarAsync(bool? ativa, CancellationToken cancellationToken)
+       public async Task<IReadOnlyList<Igreja>> ListarAsync(bool? ativa, EscopoDeAcesso escopo, CancellationToken cancellationToken)
     {
         IQueryable<Igreja> consulta = context.Igrejas.AsNoTracking();
+
+        if (!escopo.Total)
+        {
+            IReadOnlyList<Guid> igrejaIds = escopo.IgrejaIds;
+            consulta = consulta.Where(igreja => igrejaIds.Contains(igreja.Id));
+        }
 
         if (ativa is bool valor)
         {

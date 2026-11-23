@@ -1,5 +1,6 @@
 using FluentValidation;
 using Temple.Application.Comum;
+using Temple.Application.Comum.Acesso;
 using Temple.Application.Comum.Excecoes;
 using Temple.Application.Comum.Persistencia;
 using Temple.Domain.Entities;
@@ -9,12 +10,20 @@ namespace Temple.Application.Igrejas;
 public sealed class IgrejaService(
     IIgrejaRepository igrejaRepository,
     IUnitOfWork unitOfWork,
+    ProvedorDeEscopo provedorDeEscopo,
     IValidator<CriarIgrejaRequest> criarIgrejaValidator,
     IValidator<AtualizarIgrejaRequest> atualizarIgrejaValidator)
 {
     public async Task<IgrejaResponse> CriarMatrizAsync(CriarIgrejaRequest request, CancellationToken cancellationToken)
     {
         await criarIgrejaValidator.ValidateAndThrowAsync(request, cancellationToken);
+
+        EscopoDeAcesso escopo = await provedorDeEscopo.ObterAsync(cancellationToken);
+
+        if (!escopo.Total)
+        {
+            throw new AcessoNegadoException("Só a administração geral pode cadastrar uma nova igreja matriz.");
+        }
 
         Igreja matriz = request.ParaMatriz();
 
@@ -50,7 +59,8 @@ public sealed class IgrejaService(
 
         public async Task<IReadOnlyList<IgrejaResponse>> ListarAsync(bool? ativa, CancellationToken cancellationToken)
     {
-        IReadOnlyList<Igreja> igrejas = await igrejaRepository.ListarAsync(ativa, cancellationToken);
+        EscopoDeAcesso escopo = await provedorDeEscopo.ObterAsync(cancellationToken);
+         IReadOnlyList<Igreja> igrejas = await igrejaRepository.ListarAsync(ativa, escopo, cancellationToken);
 
         return igrejas
             .Select(igreja => igreja.ParaResponse())
@@ -105,8 +115,8 @@ public sealed class IgrejaService(
     private async Task<Igreja> ObterEntidadeAsync(Guid id, CancellationToken cancellationToken)
     {
         Igreja? igreja = await igrejaRepository.ObterPorIdAsync(id, cancellationToken);
-
-        if (igreja is null)
+         EscopoDeAcesso escopo = await provedorDeEscopo.ObterAsync(cancellationToken);
+        if (igreja is null || !escopo.AlcancaIgreja(igreja.Id))
         {
             throw new NaoEncontradoException($"Igreja '{id}' não encontrada.");
         }
