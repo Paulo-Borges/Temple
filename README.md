@@ -38,7 +38,12 @@ O projeto é construído **passo a passo, como um curso**, com foco em boas prá
 - Listagem **paginada**, com filtros por igreja, nome (busca parcial), cargo e situação.
 - Edição de nome, endereço e grupo.
 - Ativação e desativação.
-- **Promoção de cargo** com **histórico** gravado. Os cargos são Membro, Cooperador, Diácono, Presbítero, Evangelista, Missionário e Pastor.
+- **Promoção de cargo** com **histórico** gravado. Os cargos, em ordem de hierarquia, são Membro, Cooperador, Diácono, Presbítero, Evangelista, Missionário e Pastor. As regras:
+  - subir pode pular degraus (de Membro direto para Diácono, por exemplo);
+  - descer de cargo (**rebaixamento**) é permitido, mas exige o motivo na observação;
+  - a data não pode estar no futuro nem ser anterior ao nascimento do membro ou à última promoção, para o histórico ficar sempre em ordem;
+  - membro desativado não pode ser promovido.
+- O histórico funciona como **trilha de auditoria**: cada registro guarda quem fez a promoção (id e uma cópia do nome), a observação opcional, se foi um rebaixamento e o momento em que foi registrado. Os registros anteriores a essa auditoria aparecem sem autor.
 
 **Aniversariantes**
 - Lista dos **aniversariantes do mês**: por padrão o mês atual, ou outro mês informado (`?mes=1` a `12`), com filtro opcional por igreja.
@@ -230,8 +235,8 @@ Todas as rotas, **exceto o login**, exigem o cabeçalho `Authorization: Bearer <
 | `GET` | `/api/membros/{id}` | Busca um membro | Pastor, Secretário, Tesoureiro, Líderes |
 | `PUT` | `/api/membros/{id}` | Edita nome, endereço e grupo | Pastor, Secretário |
 | `POST` | `/api/membros/{id}/ativar` · `/desativar` | Ativa ou desativa | Pastor, Secretário |
-| `POST` | `/api/membros/{id}/promocoes` | Promove de cargo e grava o histórico | Pastor |
-| `GET` | `/api/membros/{id}/historico-cargos` | Histórico de cargos, em ordem de data | Pastor, Secretário, Tesoureiro, Líderes |
+| `POST` | `/api/membros/{id}/promocoes` | Promove ou rebaixa de cargo (`novoCargo`, `dataPromocao` e `observacao`, obrigatória no rebaixamento) e grava o histórico com o autor | Pastor |
+| `GET` | `/api/membros/{id}/historico-cargos` | Histórico de cargos, em ordem de data e de registro, com autor, observação e rebaixamento | Pastor, Secretário, Tesoureiro, Líderes |
 
 ### Aniversariantes
 | Método | Rota | Descrição | Permissão |
@@ -320,7 +325,8 @@ npm run dev
 - **Repositórios + Unit of Work**: `AsNoTracking` nas listagens, `Include` só onde a regra precisa, e paginação feita no banco (`Skip`/`Take`, com ordem estável).
 - **Erros padronizados** com `ProblemDetails` (RFC 9457) e um handler global.
 - **Segurança**: senhas com hash (Identity), bloqueio após tentativas erradas, JWT com emissor, audiência, algoritmo e validade conferidos, rotas **fechadas por padrão** (*fallback policy*), **autorização por permissão** (*policies* que concentram a matriz perfil → permissão num lugar só), **escopo de acesso** aplicado na consulta ao banco (fora do alcance é 404, para não revelar dados de outras igrejas) e segredos no *user-secrets*.
-- **Migrations revisadas à mão** antes de aplicar. Por exemplo, a coluna `Ativo` entrou com valor padrão `true`, para não desativar os membros que já existiam.
+- **Migrations revisadas à mão** antes de aplicar. Por exemplo, a coluna `Ativo` entrou com valor padrão `true`, para não desativar os membros que já existiam, e as colunas de auditoria do histórico entraram anuláveis, para não inventar um autor para os registros antigos.
+- **Relógio injetado** (`TimeProvider`) no lugar de `DateTime.Now` nas regras novas: o domínio recebe a data e a hora de quem chama, e os testes podem simular qualquer dia.
 
 **React / TypeScript** *(a partir do Módulo 6)*
 - TypeScript em modo `strict`, com tipos que espelham os DTOs do C#.
@@ -342,7 +348,7 @@ npm run dev
 | 2 | Persistência: EF Core, relacionamentos, migrations e seed | ✅ |
 | 3 | Application e API: DTOs, services, validação, controllers, CRUD de igrejas e membros | ✅ |
 | 4 | Segurança: Identity + JWT, perfis e policies, vínculo usuário ↔ membro e escopo por igreja | ✅ |
-| 5 | Regras de negócio: aniversariantes ✅ · promoções ⬜ · certificados em PDF ⬜ | 🔄 |
+| 5 | Regras de negócio: aniversariantes ✅ · promoções ✅ · certificados em PDF ⬜ | 🔄 |
 | 5B | Financeiro: dízimos, ofertas, despesas e relatórios | ⬜ |
 | 6 | Fundamentos do frontend: React, TypeScript, Tailwind e React Router | ⬜ |
 | 7 | Integração front + API: Axios, TanStack Query, login e rotas protegidas | ⬜ |
