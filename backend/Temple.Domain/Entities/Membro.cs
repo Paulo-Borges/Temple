@@ -72,9 +72,15 @@ public sealed class Membro
         Grupo = ValidarGrupo(novoGrupo);
     }
 
-    public void PromoverCargo(TipoCargo novoCargo, DateOnly dataPromocao)
+      public void PromoverCargo(
+        TipoCargo novoCargo,
+        DateOnly dataPromocao,
+        string? observacao,
+        Guid promovidoPorId,
+        string promovidoPorNome,
+        DateTimeOffset agora)
     {
-                if (!Ativo)
+        if (!Ativo)
         {
             throw new DomainException("Não é possível promover um membro desativado.");
         }
@@ -86,14 +92,34 @@ public sealed class Membro
             throw new DomainException("O novo cargo deve ser diferente do cargo atual.");
         }
 
-        DateOnly hoje = DateOnly.FromDateTime(DateTime.Today);
+        DateOnly hoje = DateOnly.FromDateTime(agora.DateTime);
 
         if (dataPromocao > hoje)
         {
             throw new DomainException("A data da promoção não pode estar no futuro.");
         }
 
-        HistoricoCargo historico = new(Id, CargoAtual, novoCargo, dataPromocao);
+        if (dataPromocao < DataNascimento)
+        {
+            throw new DomainException("A data da promoção não pode ser anterior ao nascimento do membro.");
+        }
+
+        if (_historicoCargos.Count > 0)
+        {
+            DateOnly ultimaPromocao = _historicoCargos.Max(historico => historico.DataPromocao);
+
+            if (dataPromocao < ultimaPromocao)
+            {
+                throw new DomainException($"A data da promoção não pode ser anterior à última promoção, de {ultimaPromocao:dd/MM/yyyy}.");
+            }
+        }
+
+        if (novoCargo < CargoAtual && string.IsNullOrWhiteSpace(observacao))
+        {
+            throw new DomainException("Para rebaixar o cargo, informe o motivo na observação.");
+        }
+
+        HistoricoCargo historico = new(Id, CargoAtual, novoCargo, dataPromocao, observacao, promovidoPorId, promovidoPorNome, agora);
         _historicoCargos.Add(historico);
 
         CargoAtual = novoCargo;

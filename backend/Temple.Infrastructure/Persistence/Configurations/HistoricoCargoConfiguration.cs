@@ -23,5 +23,11 @@ internal sealed class HistoricoCargoConfiguration : IEntityTypeConfiguration<His
 
         builder.Property(historico => historico.DataPromocao)
             .IsRequired();
+            
+        builder.Property(historico => historico.Observacao)
+            .HasMaxLength(HistoricoCargo.TamanhoMaximoObservacao);
+
+        builder.Property(historico => historico.PromovidoPorNome)
+            .HasMaxLength(HistoricoCargo.TamanhoMaximoNomeDoAutor);
     }
 }

@@ -14,7 +14,9 @@ public sealed class MembroService(
     IIgrejaRepository igrejaRepository,
     IUnitOfWork unitOfWork,
     IServicoDeIdentidade servicoDeIdentidade,
-     ProvedorDeEscopo provedorDeEscopo,
+    ProvedorDeEscopo provedorDeEscopo,
+    IUsuarioAtual usuarioAtual,
+    TimeProvider timeProvider,
     IValidator<CriarMembroRequest> criarMembroValidator,
     IValidator<AtualizarMembroRequest> atualizarMembroValidator,
     IValidator<PromoverCargoRequest> promoverCargoValidator,
@@ -123,13 +125,19 @@ public sealed class MembroService(
         await unitOfWork.SalvarAlteracoesAsync(cancellationToken);
     }
 
-    public async Task<MembroResponse> PromoverCargoAsync(Guid id, PromoverCargoRequest request, CancellationToken cancellationToken)
+        public async Task<MembroResponse> PromoverCargoAsync(Guid id, PromoverCargoRequest request, CancellationToken cancellationToken)
     {
         await promoverCargoValidator.ValidateAndThrowAsync(request, cancellationToken);
 
         Membro membro = await ObterEntidadeAsync(id, cancellationToken);
+        UsuarioAutenticado? autor = await servicoDeIdentidade.ObterPorIdAsync(usuarioAtual.Id, cancellationToken);
 
-        membro.PromoverCargo(request.NovoCargo, request.DataPromocao);
+        if (autor is null)
+        {
+            throw new NaoAutorizadoException("O usuário do token não existe mais.");
+        }
+
+        membro.PromoverCargo(request.NovoCargo, request.DataPromocao, request.Observacao, autor.Id, autor.Nome, timeProvider.GetLocalNow());
 
         await unitOfWork.SalvarAlteracoesAsync(cancellationToken);
 
@@ -140,8 +148,9 @@ public sealed class MembroService(
     {
         Membro membro = await ObterEntidadeAsync(id, cancellationToken);
 
-        return membro.HistoricoCargos
+            return membro.HistoricoCargos
             .OrderBy(historico => historico.DataPromocao)
+            .ThenBy(historico => historico.RegistradoEm)
             .Select(historico => historico.ParaResponse())
             .ToList();
     }

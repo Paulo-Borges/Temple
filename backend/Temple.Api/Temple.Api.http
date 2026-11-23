@@ -208,7 +208,19 @@ Content-Type: application/json
 
 {
   "novoCargo": "Cooperador",
-  "dataPromocao": "2026-01-15"
+  "dataPromocao": "2026-01-15",
+  "observacao": "Consagrado no culto de santa ceia"
+}
+
+### Rebaixar o membro cadastrado acima (o motivo na observação é obrigatório)
+POST {{baseUrl}}/api/membros/{{criarMembro.response.body.$.id}}/promocoes
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "novoCargo": "Membro",
+  "dataPromocao": "2026-02-10",
+  "observacao": "Afastado por decisão do ministério"
 }
 
 ### Histórico de cargos do membro cadastrado acima

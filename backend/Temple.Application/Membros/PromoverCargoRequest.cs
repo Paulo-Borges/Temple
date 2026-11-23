@@ -4,4 +4,5 @@ namespace Temple.Application.Membros;
 
 public sealed record PromoverCargoRequest(
     TipoCargo NovoCargo,
-    DateOnly DataPromocao);
+    DateOnly DataPromocao,
+    string? Observacao = null);

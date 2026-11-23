@@ -171,6 +171,20 @@ namespace Temple.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("MembroId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("Observacao")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<Guid?>("PromovidoPorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("PromovidoPorNome")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<DateTimeOffset?>("RegistradoEm")
+                        .HasColumnType("datetimeoffset");
+
                     b.HasKey("Id");
 
                     b.HasIndex("MembroId");

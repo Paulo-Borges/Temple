@@ -6,4 +6,9 @@ public sealed record HistoricoCargoResponse(
     Guid Id,
     TipoCargo CargoAnterior,
     TipoCargo CargoNovo,
-    DateOnly DataPromocao);
+    DateOnly DataPromocao,
+    bool Rebaixamento,
+    string? Observacao,
+    Guid? PromovidoPorId,
+    string? PromovidoPorNome,
+    DateTimeOffset? RegistradoEm);

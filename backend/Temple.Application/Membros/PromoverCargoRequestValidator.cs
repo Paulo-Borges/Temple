@@ -1,10 +1,11 @@
 using FluentValidation;
+using Temple.Domain.Entities;
 
 namespace Temple.Application.Membros;
 
 public sealed class PromoverCargoRequestValidator : AbstractValidator<PromoverCargoRequest>
 {
-    public PromoverCargoRequestValidator()
+    public PromoverCargoRequestValidator(TimeProvider timeProvider)
     {
         RuleLevelCascadeMode = CascadeMode.Stop;
 
@@ -12,7 +13,10 @@ public sealed class PromoverCargoRequestValidator : AbstractValidator<PromoverCa
             .IsInEnum();
 
         RuleFor(request => request.DataPromocao)
-            .LessThanOrEqualTo(_ => DateOnly.FromDateTime(DateTime.Today))
+            .LessThanOrEqualTo(_ => DateOnly.FromDateTime(timeProvider.GetLocalNow().DateTime))
             .WithMessage("'{PropertyName}' não pode estar no futuro.");
+
+        RuleFor(request => request.Observacao)
+            .MaximumLength(HistoricoCargo.TamanhoMaximoObservacao);
     }
 }

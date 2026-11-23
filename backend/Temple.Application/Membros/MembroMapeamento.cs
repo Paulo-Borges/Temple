@@ -19,13 +19,18 @@ public static class MembroMapeamento
             membro.Ativo);
     }
 
-    public static HistoricoCargoResponse ParaResponse(this HistoricoCargo historico)
+       public static HistoricoCargoResponse ParaResponse(this HistoricoCargo historico)
     {
         return new HistoricoCargoResponse(
             historico.Id,
             historico.CargoAnterior,
             historico.CargoNovo,
-            historico.DataPromocao);
+            historico.DataPromocao,
+            historico.EhRebaixamento,
+            historico.Observacao,
+            historico.PromovidoPorId,
+            historico.PromovidoPorNome,
+            historico.RegistradoEm);
     }
 
     public static Membro ParaMembro(this CriarMembroRequest request, Igreja igreja)
