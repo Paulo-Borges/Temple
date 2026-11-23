@@ -4,7 +4,7 @@ Sistema web para a gestão de igrejas: **matriz e filiais, membros, cargos ecles
 
 O projeto é construído **passo a passo, como um curso**, com foco em boas práticas de **C#/.NET** e **React/TypeScript**: arquitetura limpa, tipagem forte, validação em camadas e segurança desde o início.
 
-> 🚧 **Em desenvolvimento.** O **backend** (API REST) está funcional, com cadastro de igrejas, membros e usuários, login com JWT, permissões por perfil e **escopo de acesso por igreja e por grupo**. O **frontend** em React começa no Módulo 6 e, por enquanto, ainda é o template inicial do Vite. Veja o [Roteiro](#-roteiro).
+> 🚧 **Em desenvolvimento.** O **backend** (API REST) está funcional, com cadastro de igrejas, membros e usuários, login com JWT, permissões por perfil, **escopo de acesso por igreja e por grupo** e aniversariantes do mês. O **frontend** em React começa no Módulo 6 e, por enquanto, ainda é o template inicial do Vite. Veja o [Roteiro](#-roteiro).
 
 ---
 
@@ -39,6 +39,13 @@ O projeto é construído **passo a passo, como um curso**, com foco em boas prá
 - Edição de nome, endereço e grupo.
 - Ativação e desativação.
 - **Promoção de cargo** com **histórico** gravado. Os cargos são Membro, Cooperador, Diácono, Presbítero, Evangelista, Missionário e Pastor.
+
+**Aniversariantes**
+- Lista dos **aniversariantes do mês**: por padrão o mês atual, ou outro mês informado (`?mes=1` a `12`), com filtro opcional por igreja.
+- Entram só os **membros ativos**, em ordem de dia e nome.
+- Cada item traz o dia, a **idade que a pessoa completa no ano** e o nome da igreja. O endereço não aparece.
+- Respeita o [escopo de acesso](#-funcionalidades): a matriz vê as filiais, e o líder de grupo vê só o próprio grupo.
+- O mês atual vem de um relógio injetado (`TimeProvider`), que pode ser trocado nos testes.
 
 **Autenticação**
 - Login com e-mail e senha (ASP.NET Identity), devolvendo um **token JWT** que vale 8 horas.
@@ -75,7 +82,6 @@ O projeto é construído **passo a passo, como um curso**, com foco em boas prá
 - O escopo é calculado a partir dos dados do banco a cada requisição, e não do token.
 
 ### 🔜 Planejadas
-- Aniversariantes do mês.
 - **Certificados em PDF**: Batismo, Apresentação de Criança e Promoção de Cargo.
 - **Financeiro**: dízimos, ofertas (que podem ser anônimas), outras entradas, despesas e relatórios consolidados da matriz com as filiais.
 - Interface web em **React**.
@@ -90,7 +96,7 @@ O projeto é construído **passo a passo, como um curso**, com foco em boas prá
 | Líderes (Varões, Irmãs, Jovens, Crianças) | — | Ver o próprio grupo | — | ✔ do grupo | — |
 | Funcionário / Cozinheira | — | Ver o próprio perfil | — | — | — |
 
-> Esta é a matriz completa, o objetivo do projeto. **Já em vigor:** as permissões de igrejas, membros e usuários (veja a coluna *Permissão* em [Endpoints da API](#-endpoints-da-api)) e o [escopo de acesso](#-funcionalidades): os Líderes veem os membros do próprio grupo, e o Funcionário e a Cozinheira veem o próprio cadastro. Certificados, aniversariantes e financeiro chegam nos Módulos 5 e 5B.
+> Esta é a matriz completa, o objetivo do projeto. **Já em vigor:** as permissões de igrejas, membros e usuários (veja a coluna *Permissão* em [Endpoints da API](#-endpoints-da-api)) e o [escopo de acesso](#-funcionalidades): os Líderes veem os membros e os aniversariantes do próprio grupo, e o Funcionário e a Cozinheira veem o próprio cadastro. Os aniversariantes já estão em vigor para todos os perfis da coluna. Certificados e financeiro chegam nos Módulos 5 e 5B.
 
 ---
 
@@ -227,6 +233,11 @@ Todas as rotas, **exceto o login**, exigem o cabeçalho `Authorization: Bearer <
 | `POST` | `/api/membros/{id}/promocoes` | Promove de cargo e grava o histórico | Pastor |
 | `GET` | `/api/membros/{id}/historico-cargos` | Histórico de cargos, em ordem de data | Pastor, Secretário, Tesoureiro, Líderes |
 
+### Aniversariantes
+| Método | Rota | Descrição | Permissão |
+|---|---|---|---|
+| `GET` | `/api/membros/aniversariantes?mes=&igrejaId=` | Membros ativos que fazem aniversário no mês (sem `mes`, o mês atual), por dia e nome | Pastor, Secretário, Tesoureiro, Líderes |
+
 ### Usuários
 | Método | Rota | Descrição | Permissão |
 |---|---|---|---|
@@ -331,7 +342,7 @@ npm run dev
 | 2 | Persistência: EF Core, relacionamentos, migrations e seed | ✅ |
 | 3 | Application e API: DTOs, services, validação, controllers, CRUD de igrejas e membros | ✅ |
 | 4 | Segurança: Identity + JWT, perfis e policies, vínculo usuário ↔ membro e escopo por igreja | ✅ |
-| 5 | Regras de negócio: aniversariantes, promoções e certificados em PDF | ⬜ |
+| 5 | Regras de negócio: aniversariantes ✅ · promoções ⬜ · certificados em PDF ⬜ | 🔄 |
 | 5B | Financeiro: dízimos, ofertas, despesas e relatórios | ⬜ |
 | 6 | Fundamentos do frontend: React, TypeScript, Tailwind e React Router | ⬜ |
 | 7 | Integração front + API: Axios, TanStack Query, login e rotas protegidas | ⬜ |
