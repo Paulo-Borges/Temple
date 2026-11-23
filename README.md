@@ -4,7 +4,7 @@ Sistema web para a gestão de igrejas: **matriz e filiais, membros, cargos ecles
 
 O projeto é construído **passo a passo, como um curso**, com foco em boas práticas de **C#/.NET** e **React/TypeScript**: arquitetura limpa, tipagem forte, validação em camadas e segurança desde o início.
 
-> 🚧 **Em desenvolvimento.** O **backend** (API REST) está funcional, com cadastro de igrejas, membros e usuários, login com JWT e permissões por perfil. O **frontend** em React começa no Módulo 6 e, por enquanto, ainda é o template inicial do Vite. Veja o [Roteiro](#-roteiro).
+> 🚧 **Em desenvolvimento.** O **backend** (API REST) está funcional, com cadastro de igrejas, membros e usuários, login com JWT, permissões por perfil e **escopo de acesso por igreja e por grupo**. O **frontend** em React começa no Módulo 6 e, por enquanto, ainda é o template inicial do Vite. Veja o [Roteiro](#-roteiro).
 
 ---
 
@@ -53,9 +53,28 @@ O projeto é construído **passo a passo, como um curso**, com foco em boas prá
 - O sistema nunca fica sem Pastor: tirar o perfil do último Pastor é recusado.
 - Erros do Identity em português: e-mail repetido (409) e senha fraca (400).
 - A troca de perfis vale a partir do **próximo login** do usuário (o token vale 8 horas).
+- Cada usuário é **ligado ao seu cadastro de membro**. Um membro só pode ter um usuário, e precisa estar ativo para ser vinculado. O Pastor pode trocar o vínculo depois.
+- Qualquer usuário logado consulta o **próprio cadastro** em `GET /api/membros/meu-cadastro`.
+
+**Escopo de acesso**
+- A permissão diz **se** o perfil pode usar a rota; o escopo diz **quais dados** ele alcança:
+
+| Quem | Alcança |
+|---|---|
+| Pastor sem membro vinculado (administração geral) | Tudo |
+| Pastor, Secretário e Tesoureiro de uma **matriz** | A matriz e as filiais dela |
+| Pastor, Secretário e Tesoureiro de uma **filial** | Só a própria filial |
+| Líder (genérico) | Os membros da própria igreja |
+| Líder dos Varões, das Irmãs, dos Jovens ou das Crianças | Só os membros do próprio grupo, na própria igreja |
+| Demais perfis | Só o próprio cadastro |
+
+- O que está fora do alcance responde **404**, igual ao que não existe. Assim, ninguém descobre dados de outras igrejas.
+- Só a administração geral cadastra uma **nova matriz** (os demais recebem **403**).
+- As listagens são filtradas **no banco**, então a paginação e o total continuam corretos.
+- O membro desativado **perde o acesso**: o login é recusado com a mesma mensagem de senha errada.
+- O escopo é calculado a partir dos dados do banco a cada requisição, e não do token.
 
 ### 🔜 Planejadas
-- Escopo por igreja: cada filial só vê os próprios dados, e cada Líder vê o próprio grupo. *(Aula 4.3)*
 - Aniversariantes do mês.
 - **Certificados em PDF**: Batismo, Apresentação de Criança e Promoção de Cargo.
 - **Financeiro**: dízimos, ofertas (que podem ser anônimas), outras entradas, despesas e relatórios consolidados da matriz com as filiais.
@@ -71,7 +90,7 @@ O projeto é construído **passo a passo, como um curso**, com foco em boas prá
 | Líderes (Varões, Irmãs, Jovens, Crianças) | — | Ver o próprio grupo | — | ✔ do grupo | — |
 | Funcionário / Cozinheira | — | Ver o próprio perfil | — | — | — |
 
-> Esta é a matriz completa, o objetivo do projeto. **Já em vigor:** as permissões de igrejas, membros e usuários (veja a coluna *Permissão* em [Endpoints da API](#-endpoints-da-api)). Por enquanto, Líderes, Funcionário e Cozinheira recebem **403** em igrejas e membros. O acesso deles ao próprio grupo e ao próprio perfil chega na Aula 4.3.
+> Esta é a matriz completa, o objetivo do projeto. **Já em vigor:** as permissões de igrejas, membros e usuários (veja a coluna *Permissão* em [Endpoints da API](#-endpoints-da-api)) e o [escopo de acesso](#-funcionalidades): os Líderes veem os membros do próprio grupo, e o Funcionário e a Cozinheira veem o próprio cadastro. Certificados, aniversariantes e financeiro chegam nos Módulos 5 e 5B.
 
 ---
 
@@ -141,7 +160,8 @@ O backend segue a **Clean Architecture**: as dependências apontam sempre **para
 |---|---|
 | Validação (`ValidationException`) | **400**, com os erros agrupados por campo |
 | Login inválido (`NaoAutorizadoException`) | **401** |
-| Recurso inexistente (`NaoEncontradoException`) | **404** |
+| Ação que exige acesso total, como cadastrar uma matriz (`AcessoNegadoException`) | **403** |
+| Recurso inexistente ou fora do escopo (`NaoEncontradoException`) | **404** |
 | Duplicidade, como um CNPJ repetido (`ConflitoException`) | **409** |
 | Regra de negócio (`DomainException`) | **422** |
 
@@ -176,7 +196,7 @@ Temple/
 
 ## 🌐 Endpoints da API
 
-Todas as rotas, **exceto o login**, exigem o cabeçalho `Authorization: Bearer <token>`. A coluna **Permissão** mostra quais perfis podem usar cada rota.
+Todas as rotas, **exceto o login**, exigem o cabeçalho `Authorization: Bearer <token>`. A coluna **Permissão** mostra quais perfis podem usar cada rota. Os dados que cada um vê e altera ainda passam pelo [escopo de acesso](#-funcionalidades).
 
 ### Autenticação
 | Método | Rota | Descrição | Permissão |
@@ -187,7 +207,7 @@ Todas as rotas, **exceto o login**, exigem o cabeçalho `Authorization: Bearer <
 ### Igrejas
 | Método | Rota | Descrição | Permissão |
 |---|---|---|---|
-| `POST` | `/api/igrejas` | Cadastra uma matriz | Pastor |
+| `POST` | `/api/igrejas` | Cadastra uma matriz | Pastor com acesso total |
 | `POST` | `/api/igrejas/{matrizId}/filiais` | Cadastra uma filial da matriz | Pastor |
 | `GET` | `/api/igrejas?ativa=true` | Lista as igrejas (o filtro `ativa` é opcional) | Pastor, Secretário, Tesoureiro |
 | `GET` | `/api/igrejas/{id}` | Busca uma igreja | Pastor, Secretário, Tesoureiro |
@@ -199,20 +219,22 @@ Todas as rotas, **exceto o login**, exigem o cabeçalho `Authorization: Bearer <
 | Método | Rota | Descrição | Permissão |
 |---|---|---|---|
 | `POST` | `/api/membros` | Cadastra um membro | Pastor, Secretário |
-| `GET` | `/api/membros?igrejaId=&nome=&cargo=&ativo=&pagina=1&tamanhoPagina=20` | Lista paginada com filtros (máximo de 100 por página) | Pastor, Secretário, Tesoureiro |
-| `GET` | `/api/membros/{id}` | Busca um membro | Pastor, Secretário, Tesoureiro |
+| `GET` | `/api/membros?igrejaId=&nome=&cargo=&ativo=&pagina=1&tamanhoPagina=20` | Lista paginada com filtros (máximo de 100 por página) | Pastor, Secretário, Tesoureiro, Líderes |
+| `GET` | `/api/membros/meu-cadastro` | Cadastro de membro do usuário logado | Qualquer usuário logado |
+| `GET` | `/api/membros/{id}` | Busca um membro | Pastor, Secretário, Tesoureiro, Líderes |
 | `PUT` | `/api/membros/{id}` | Edita nome, endereço e grupo | Pastor, Secretário |
 | `POST` | `/api/membros/{id}/ativar` · `/desativar` | Ativa ou desativa | Pastor, Secretário |
 | `POST` | `/api/membros/{id}/promocoes` | Promove de cargo e grava o histórico | Pastor |
-| `GET` | `/api/membros/{id}/historico-cargos` | Histórico de cargos, em ordem de data | Pastor, Secretário, Tesoureiro |
+| `GET` | `/api/membros/{id}/historico-cargos` | Histórico de cargos, em ordem de data | Pastor, Secretário, Tesoureiro, Líderes |
 
 ### Usuários
 | Método | Rota | Descrição | Permissão |
 |---|---|---|---|
-| `POST` | `/api/usuarios` | Cadastra um usuário com nome, e-mail, senha inicial e perfis | Pastor |
-| `GET` | `/api/usuarios` | Lista os usuários e seus perfis | Pastor |
+| `POST` | `/api/usuarios` | Cadastra um usuário com nome, e-mail, senha inicial, membro e perfis | Pastor |
+| `GET` | `/api/usuarios` | Lista os usuários, seus perfis e o membro vinculado | Pastor |
 | `GET` | `/api/usuarios/{id}` | Busca um usuário | Pastor |
 | `PUT` | `/api/usuarios/{id}/perfis` | Troca os perfis (vale a partir do próximo login do usuário) | Pastor |
+| `PUT` | `/api/usuarios/{id}/membro` | Vincula o usuário a outro membro | Pastor |
 
 > 💡 Com a API rodando em desenvolvimento, a documentação interativa fica em **`/swagger`**. O arquivo [`backend/Temple.Api/Temple.Api.http`](backend/Temple.Api/Temple.Api.http) tem exemplos prontos de todas as rotas, para a extensão **REST Client** do VS Code.
 
@@ -265,7 +287,7 @@ dotnet run --project Temple.Api
 - Swagger: `http://localhost:5022/swagger`
 - Login inicial: `pastor@temple.local`, com a senha definida no passo 1. O usuário é criado ao subir a API.
 
-No Swagger, faça o login em `POST /api/autenticacao/login`, copie o `token`, clique em **🔒 Authorize** e cole o token. Os demais usuários são cadastrados pelo Pastor, em `POST /api/usuarios`.
+No Swagger, faça o login em `POST /api/autenticacao/login`, copie o `token`, clique em **🔒 Authorize** e cole o token. Os demais usuários são cadastrados pelo Pastor, em `POST /api/usuarios`, e cada um precisa ser ligado a um membro ativo já cadastrado.
 
 ### 4. Frontend (template inicial)
 Na raiz do repositório:
@@ -286,7 +308,7 @@ npm run dev
 - **Validação em duas camadas**: FluentValidation na entrada (400) e regras de domínio na entidade (422).
 - **Repositórios + Unit of Work**: `AsNoTracking` nas listagens, `Include` só onde a regra precisa, e paginação feita no banco (`Skip`/`Take`, com ordem estável).
 - **Erros padronizados** com `ProblemDetails` (RFC 9457) e um handler global.
-- **Segurança**: senhas com hash (Identity), bloqueio após tentativas erradas, JWT com emissor, audiência, algoritmo e validade conferidos, rotas **fechadas por padrão** (*fallback policy*), **autorização por permissão** (*policies* que concentram a matriz perfil → permissão num lugar só) e segredos no *user-secrets*.
+- **Segurança**: senhas com hash (Identity), bloqueio após tentativas erradas, JWT com emissor, audiência, algoritmo e validade conferidos, rotas **fechadas por padrão** (*fallback policy*), **autorização por permissão** (*policies* que concentram a matriz perfil → permissão num lugar só), **escopo de acesso** aplicado na consulta ao banco (fora do alcance é 404, para não revelar dados de outras igrejas) e segredos no *user-secrets*.
 - **Migrations revisadas à mão** antes de aplicar. Por exemplo, a coluna `Ativo` entrou com valor padrão `true`, para não desativar os membros que já existiam.
 
 **React / TypeScript** *(a partir do Módulo 6)*
@@ -308,7 +330,7 @@ npm run dev
 | 1 | Fundamentos do backend: solution, Domain, entidades e value objects | ✅ |
 | 2 | Persistência: EF Core, relacionamentos, migrations e seed | ✅ |
 | 3 | Application e API: DTOs, services, validação, controllers, CRUD de igrejas e membros | ✅ |
-| 4 | Segurança: Identity + JWT ✅ · perfis e policies ✅ · escopo por igreja ⬜ | 🔄 |
+| 4 | Segurança: Identity + JWT, perfis e policies, vínculo usuário ↔ membro e escopo por igreja | ✅ |
 | 5 | Regras de negócio: aniversariantes, promoções e certificados em PDF | ⬜ |
 | 5B | Financeiro: dízimos, ofertas, despesas e relatórios | ⬜ |
 | 6 | Fundamentos do frontend: React, TypeScript, Tailwind e React Router | ⬜ |
