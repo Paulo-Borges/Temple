@@ -4,7 +4,7 @@ Sistema web para a gestão de igrejas: **matriz e filiais, membros, cargos ecles
 
 O projeto é construído **passo a passo, como um curso**, com foco em boas práticas de **C#/.NET** e **React/TypeScript**: arquitetura limpa, tipagem forte, validação em camadas e segurança desde o início.
 
-> 🚧 **Em desenvolvimento.** O **backend** (API REST) está funcional, com cadastro de igrejas, membros e usuários, login com JWT, permissões por perfil, **escopo de acesso por igreja e por grupo** e aniversariantes do mês. O **frontend** em React começa no Módulo 6 e, por enquanto, ainda é o template inicial do Vite. Veja o [Roteiro](#-roteiro).
+> 🚧 **Em desenvolvimento.** O **backend** (API REST) está funcional, com cadastro de igrejas, membros e usuários, login com JWT, permissões por perfil, **escopo de acesso por igreja e por grupo**, aniversariantes do mês e **certificado de promoção em PDF**. O **frontend** em React começa no Módulo 6 e, por enquanto, ainda é o template inicial do Vite. Veja o [Roteiro](#-roteiro).
 
 ---
 
@@ -52,6 +52,16 @@ O projeto é construído **passo a passo, como um curso**, com foco em boas prá
 - Respeita o [escopo de acesso](#-funcionalidades): a matriz vê as filiais, e o líder de grupo vê só o próprio grupo.
 - O mês atual vem de um relógio injetado (`TimeProvider`), que pode ser trocado nos testes.
 
+**Certificados**
+- **Certificado de Promoção de Cargo em PDF**, gerado com o QuestPDF a partir de um registro do histórico de cargos. O layout é A4 paisagem, com borda dupla, o nome da igreja, o texto com o cargo e a data por extenso, a cidade e a data da emissão, linhas para as assinaturas do Pastor e do(a) Secretário(a) e o número no rodapé.
+- Cada emissão é **registrada** com um **número sequencial único** (impresso como `Nº 000001`), quem emitiu (id e uma cópia do nome) e quando. O PDF não fica guardado: ele é gerado de novo a cada pedido.
+- A **2ª via** pelo número reimprime o mesmo certificado, com o mesmo número e a data da emissão original, sem criar outro registro.
+- As regras:
+  - cada promoção tem **um único certificado** (pedir de novo dá **409**, e o caminho é a 2ª via);
+  - rebaixamento não gera certificado de promoção, e membro desativado não recebe emissão nova (**422**). A 2ª via de um certificado já emitido continua funcionando;
+  - a emissão e a 2ª via respeitam o [escopo de acesso](#-funcionalidades).
+- O PDF é baixado com o nome `certificado-000001.pdf`.
+
 **Autenticação**
 - Login com e-mail e senha (ASP.NET Identity), devolvendo um **token JWT** que vale 8 horas.
 - **Todas as rotas exigem login**, exceto a própria rota de login.
@@ -87,7 +97,7 @@ O projeto é construído **passo a passo, como um curso**, com foco em boas prá
 - O escopo é calculado a partir dos dados do banco a cada requisição, e não do token.
 
 ### 🔜 Planejadas
-- **Certificados em PDF**: Batismo, Apresentação de Criança e Promoção de Cargo.
+- **Certificados em PDF de Batismo e de Apresentação de Criança**, com os registros desses eventos.
 - **Financeiro**: dízimos, ofertas (que podem ser anônimas), outras entradas, despesas e relatórios consolidados da matriz com as filiais.
 - Interface web em **React**.
 
@@ -101,7 +111,7 @@ O projeto é construído **passo a passo, como um curso**, com foco em boas prá
 | Líderes (Varões, Irmãs, Jovens, Crianças) | — | Ver o próprio grupo | — | ✔ do grupo | — |
 | Funcionário / Cozinheira | — | Ver o próprio perfil | — | — | — |
 
-> Esta é a matriz completa, o objetivo do projeto. **Já em vigor:** as permissões de igrejas, membros e usuários (veja a coluna *Permissão* em [Endpoints da API](#-endpoints-da-api)) e o [escopo de acesso](#-funcionalidades): os Líderes veem os membros e os aniversariantes do próprio grupo, e o Funcionário e a Cozinheira veem o próprio cadastro. Os aniversariantes já estão em vigor para todos os perfis da coluna. Certificados e financeiro chegam nos Módulos 5 e 5B.
+> Esta é a matriz completa, o objetivo do projeto. **Já em vigor:** as permissões de igrejas, membros e usuários (veja a coluna *Permissão* em [Endpoints da API](#-endpoints-da-api)) e o [escopo de acesso](#-funcionalidades): os Líderes veem os membros e os aniversariantes do próprio grupo, e o Funcionário e a Cozinheira veem o próprio cadastro. Os aniversariantes já estão em vigor para todos os perfis da coluna. A emissão de certificados também já vale para o Pastor e o Secretário (permissão `Certificados.Emitir`). O financeiro chega no Módulo 5B.
 
 ---
 
@@ -116,6 +126,7 @@ O projeto é construído **passo a passo, como um curso**, com foco em boas prá
 | **ASP.NET Core Identity** | Usuários, hash de senha e bloqueio de conta |
 | **JWT Bearer** | Autenticação stateless, com token assinado em HMAC-SHA256 |
 | **FluentValidation** | Validação das requisições, com mensagens em português |
+| **QuestPDF** | Geração dos certificados em PDF (licença Community) |
 | **OpenAPI + Swagger UI** | Documentação interativa da API (só em desenvolvimento) |
 | **xUnit** | Projeto de testes criado; os testes chegam no Módulo 9 |
 
@@ -129,9 +140,6 @@ O projeto é construído **passo a passo, como um curso**, com foco em boas prá
 | TanStack Query + Axios tipado | 🔜 Módulo 7 |
 | React Hook Form + Zod | 🔜 Módulo 7 |
 | Vitest | 🔜 Módulo 9 |
-
-### Planejadas no backend
-- **QuestPDF**, para gerar os certificados e comprovantes em PDF.
 
 ---
 
@@ -160,9 +168,9 @@ O backend segue a **Clean Architecture**: as dependências apontam sempre **para
 
 | Camada | Responsabilidade |
 |---|---|
-| **Domain** | Entidades (`Igreja`, `Membro`, `HistoricoCargo`), o value object `Endereco`, os enums e as **regras de negócio**. Nada é alterado "por fora": tudo passa por métodos que validam. |
-| **Application** | Casos de uso (services), DTOs (`record`), validadores e as **interfaces** que a Infrastructure implementa: repositórios, Unit of Work, identidade, usuários e token. |
-| **Infrastructure** | Implementações técnicas: `TempleDbContext`, mapeamentos do EF, repositórios, ASP.NET Identity (usuários, perfis e mensagens em português), geração do JWT e seeds. |
+| **Domain** | Entidades (`Igreja`, `Membro`, `HistoricoCargo`, `CertificadoEmitido`), o value object `Endereco`, os enums e as **regras de negócio**. Nada é alterado "por fora": tudo passa por métodos que validam. |
+| **Application** | Casos de uso (services), DTOs (`record`), validadores e as **interfaces** que a Infrastructure implementa: repositórios, Unit of Work, identidade, usuários, token e gerador de PDF. |
+| **Infrastructure** | Implementações técnicas: `TempleDbContext`, mapeamentos do EF, repositórios, ASP.NET Identity (usuários, perfis e mensagens em português), geração do JWT, geração do PDF (QuestPDF) e seeds. |
 | **Api** | Entrada HTTP: controllers, autenticação, políticas de autorização por permissão, `ProblemDetails` e Swagger. |
 
 **Tradução de erros para HTTP** (handler global com `ProblemDetails`):
@@ -173,7 +181,7 @@ O backend segue a **Clean Architecture**: as dependências apontam sempre **para
 | Login inválido (`NaoAutorizadoException`) | **401** |
 | Ação que exige acesso total, como cadastrar uma matriz (`AcessoNegadoException`) | **403** |
 | Recurso inexistente ou fora do escopo (`NaoEncontradoException`) | **404** |
-| Duplicidade, como um CNPJ repetido (`ConflitoException`) | **409** |
+| Duplicidade, como um CNPJ repetido ou um certificado já emitido (`ConflitoException`) | **409** |
 | Regra de negócio (`DomainException`) | **422** |
 
 Sem token, ou com um token inválido ou vencido, a resposta é **401**. Com um token válido, mas sem a permissão da rota, é **403**.
@@ -189,9 +197,11 @@ Temple/
 │   ├── global.json                  # fixa o SDK do .NET 10
 │   ├── Directory.Build.props        # avisos tratados como erro, análise de código
 │   ├── Temple.Domain/               # Entities, ValueObjects, Enums, Exceptions
-│   ├── Temple.Application/          # Igrejas, Membros, Usuarios, Autenticacao, Comum
+│   ├── Temple.Application/          # Igrejas, Membros, Aniversariantes, Certificados,
+│   │                                #   Usuarios, Autenticacao, Comum
 │   ├── Temple.Infrastructure/       # Persistence (DbContext, Configurations,
-│   │                                #   Migrations, Repositorios, Seed), Identidade
+│   │                                #   Migrations, Repositorios, Seed), Identidade,
+│   │                                #   Certificados (PDF)
 │   ├── Temple.Api/                  # Controllers, Autorizacao, Configuracao, Tratamento,
 │   │                                #   Program.cs, Temple.Api.http
 │   └── Temple.Tests/                # xUnit
@@ -242,6 +252,12 @@ Todas as rotas, **exceto o login**, exigem o cabeçalho `Authorization: Bearer <
 | Método | Rota | Descrição | Permissão |
 |---|---|---|---|
 | `GET` | `/api/membros/aniversariantes?mes=&igrejaId=` | Membros ativos que fazem aniversário no mês (sem `mes`, o mês atual), por dia e nome | Pastor, Secretário, Tesoureiro, Líderes |
+
+### Certificados
+| Método | Rota | Descrição | Permissão |
+|---|---|---|---|
+| `POST` | `/api/membros/{membroId}/historico-cargos/{historicoCargoId}/certificado` | Emite o certificado de uma promoção do histórico, registra a emissão e devolve o PDF (`application/pdf`) | Pastor, Secretário |
+| `GET` | `/api/certificados/{numero}` | 2ª via: o mesmo PDF, com o mesmo número e a mesma data de emissão | Pastor, Secretário |
 
 ### Usuários
 | Método | Rota | Descrição | Permissão |
@@ -348,7 +364,7 @@ npm run dev
 | 2 | Persistência: EF Core, relacionamentos, migrations e seed | ✅ |
 | 3 | Application e API: DTOs, services, validação, controllers, CRUD de igrejas e membros | ✅ |
 | 4 | Segurança: Identity + JWT, perfis e policies, vínculo usuário ↔ membro e escopo por igreja | ✅ |
-| 5 | Regras de negócio: aniversariantes ✅ · promoções ✅ · certificados em PDF ⬜ | 🔄 |
+| 5 | Regras de negócio: aniversariantes ✅ · promoções ✅ · certificado de promoção em PDF ✅ · certificados de batismo e apresentação ⬜ | 🔄 |
 | 5B | Financeiro: dízimos, ofertas, despesas e relatórios | ⬜ |
 | 6 | Fundamentos do frontend: React, TypeScript, Tailwind e React Router | ⬜ |
 | 7 | Integração front + API: Axios, TanStack Query, login e rotas protegidas | ⬜ |
