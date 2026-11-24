@@ -1,9 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using QuestPDF.Infrastructure; 
 using Temple.Application.Autenticacao;
+using Temple.Application.Certificados;  
 using Temple.Application.Comum.Persistencia;
 using Temple.Application.Igrejas;
 using Temple.Application.Membros;
+using Temple.Infrastructure.Certificados;
 using Temple.Infrastructure.Identidade;
 using Temple.Infrastructure.Persistence;
 using Temple.Infrastructure.Persistence.Repositorios;
@@ -61,7 +64,10 @@ public static class DependencyInjection
 
         services.AddScoped<IIgrejaRepository, IgrejaRepository>();
         services.AddScoped<IMembroRepository, MembroRepository>();
+        services.AddScoped<ICertificadoRepository, CertificadoRepository>(); 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+        QuestPDF.Settings.License = LicenseType.Community;                    
+        services.AddSingleton<IGeradorDeCertificadoPdf, GeradorDeCertificadoPdf>();
 
         return services;
     }

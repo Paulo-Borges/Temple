@@ -154,6 +154,51 @@ namespace Temple.Infrastructure.Persistence.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("Temple.Domain.Entities.CertificadoEmitido", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("EmitidoEm")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("EmitidoPorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("EmitidoPorNome")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<Guid?>("HistoricoCargoId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("MembroId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Numero")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Numero"));
+
+                    b.Property<int>("Tipo")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("HistoricoCargoId")
+                        .IsUnique()
+                        .HasFilter("[HistoricoCargoId] IS NOT NULL");
+
+                    b.HasIndex("MembroId");
+
+                    b.HasIndex("Numero")
+                        .IsUnique();
+
+                    b.ToTable("CertificadosEmitidos", (string)null);
+                });
+
             modelBuilder.Entity("Temple.Domain.Entities.HistoricoCargo", b =>
                 {
                     b.Property<Guid>("Id")
@@ -495,6 +540,20 @@ namespace Temple.Infrastructure.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Temple.Domain.Entities.CertificadoEmitido", b =>
+                {
+                    b.HasOne("Temple.Domain.Entities.HistoricoCargo", null)
+                        .WithMany()
+                        .HasForeignKey("HistoricoCargoId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Temple.Domain.Entities.Membro", null)
+                        .WithMany()
+                        .HasForeignKey("MembroId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 

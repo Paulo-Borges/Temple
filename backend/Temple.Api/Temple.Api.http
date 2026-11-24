@@ -306,3 +306,27 @@ Content-Type: application/json
 GET {{baseUrl}}/api/membros/meu-cadastro
 Authorization: Bearer {{token}}
 
+
+### ===================== CERTIFICADOS (Pastor e Secretário) =====================
+
+### Histórico do membro cadastrado acima (o primeiro item é a promoção a Cooperador)
+# @name historico
+GET {{baseUrl}}/api/membros/{{criarMembro.response.body.$.id}}/historico-cargos
+Authorization: Bearer {{token}}
+
+### Emitir o certificado da primeira promoção do histórico (devolve o PDF)
+POST {{baseUrl}}/api/membros/{{criarMembro.response.body.$.id}}/historico-cargos/{{historico.response.body.$[0].id}}/certificado
+Authorization: Bearer {{token}}
+
+### Emitir de novo a mesma promoção (409: use a 2ª via)
+POST {{baseUrl}}/api/membros/{{criarMembro.response.body.$.id}}/historico-cargos/{{historico.response.body.$[0].id}}/certificado
+Authorization: Bearer {{token}}
+
+### 2ª via pelo número impresso no certificado (o REST Client pede o número)
+# @prompt numero Número do certificado
+GET {{baseUrl}}/api/certificados/{{numero}}
+Authorization: Bearer {{token}}
+
+### Certificado que não existe (404)
+GET {{baseUrl}}/api/certificados/999999
+Authorization: Bearer {{token}}

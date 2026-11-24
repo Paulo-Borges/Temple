@@ -2,6 +2,7 @@ using System.Globalization;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using Temple.Application.Aniversariantes;
+using Temple.Application.Certificados;
 using Temple.Application.Comum.Acesso;
 using Temple.Application.Igrejas;
 using Temple.Application.Membros;
@@ -23,6 +24,7 @@ public static class DependencyInjection
         services.AddScoped<AutenticacaoService>();
         services.AddScoped<UsuarioService>();
         services.AddScoped<AniversarianteService>();
+        services.AddScoped<CertificadoService>();
         services.AddSingleton(TimeProvider.System);
 
         return services;

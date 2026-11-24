@@ -12,6 +12,7 @@ public sealed class TempleDbContext(DbContextOptions<TempleDbContext> options)
     public DbSet<Igreja> Igrejas => Set<Igreja>();
     public DbSet<Membro> Membros => Set<Membro>();
     public DbSet<HistoricoCargo> HistoricoCargos => Set<HistoricoCargo>();
+     public DbSet<CertificadoEmitido> CertificadosEmitidos => Set<CertificadoEmitido>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
