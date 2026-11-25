@@ -4,7 +4,7 @@ Sistema web para a gestão de igrejas: **matriz e filiais, membros, cargos ecles
 
 O projeto é construído **passo a passo, como um curso**, com foco em boas práticas de **C#/.NET** e **React/TypeScript**: arquitetura limpa, tipagem forte, validação em camadas e segurança desde o início.
 
-> 🚧 **Em desenvolvimento.** O **backend** (API REST) está funcional, com cadastro de igrejas, membros e usuários, login com JWT, permissões por perfil, **escopo de acesso por igreja e por grupo**, aniversariantes do mês e **certificado de promoção em PDF**. O **frontend** em React começa no Módulo 6 e, por enquanto, ainda é o template inicial do Vite. Veja o [Roteiro](#-roteiro).
+> 🚧 **Em desenvolvimento.** O **backend** (API REST) está funcional, com cadastro de igrejas, membros e usuários, login com JWT, permissões por perfil, **escopo de acesso por igreja e por grupo**, aniversariantes do mês, **registros de batismo e de apresentação de criança** e **certificados em PDF** de promoção, batismo e apresentação. O **frontend** em React começa no Módulo 6 e, por enquanto, ainda é o template inicial do Vite. Veja o [Roteiro](#-roteiro).
 
 ---
 
@@ -52,14 +52,28 @@ O projeto é construído **passo a passo, como um curso**, com foco em boas prá
 - Respeita o [escopo de acesso](#-funcionalidades): a matriz vê as filiais, e o líder de grupo vê só o próprio grupo.
 - O mês atual vem de um relógio injetado (`TimeProvider`), que pode ser trocado nos testes.
 
+**Batismo**
+- Registro do **batismo** de um membro, com no máximo um batismo por membro: data, oficiante (o nome de quem batizou, que pode ser um pastor convidado) e local, que é opcional.
+- A data não pode estar no futuro nem ser anterior ao nascimento. Não há idade mínima.
+- Membro desativado não recebe registro de batismo (**422**).
+
+**Apresentação de criança**
+- Registro **avulso**: a criança não precisa ter cadastro de membro. O registro guarda o nome e o nascimento da criança, os nomes do pai e da mãe (pelo menos um dos dois), a data da apresentação, o oficiante e a **igreja** onde ela aconteceu.
+- Na data da apresentação, a criança deve ter **menos de 12 anos**, seguindo o conceito de criança do ECA.
+- A igreja precisa estar ativa, e a lista de apresentações pode ser filtrada por igreja.
+
+**Correção dos registros**
+- Um registro de batismo ou de apresentação pode ser corrigido **enquanto não houver certificado emitido**. Depois da emissão, a correção é recusada (**422**), para o papel impresso sempre bater com o registro. Não há exclusão.
+
 **Certificados**
-- **Certificado de Promoção de Cargo em PDF**, gerado com o QuestPDF a partir de um registro do histórico de cargos. O layout é A4 paisagem, com borda dupla, o nome da igreja, o texto com o cargo e a data por extenso, a cidade e a data da emissão, linhas para as assinaturas do Pastor e do(a) Secretário(a) e o número no rodapé.
+- Três certificados em PDF, gerados com o QuestPDF: **Promoção de Cargo** (a partir de um registro do histórico de cargos), **Batismo** e **Apresentação de Criança**.
+- O layout é o mesmo para os três: A4 paisagem, com borda dupla, o nome da igreja, o título, o texto com os dados e as datas por extenso, a cidade e a data da emissão, linhas para as assinaturas do Pastor e do(a) Secretário(a) e o número no rodapé.
 - Cada emissão é **registrada** com um **número sequencial único** (impresso como `Nº 000001`), quem emitiu (id e uma cópia do nome) e quando. O PDF não fica guardado: ele é gerado de novo a cada pedido.
-- A **2ª via** pelo número reimprime o mesmo certificado, com o mesmo número e a data da emissão original, sem criar outro registro.
+- A **2ª via** pelo número reimprime o mesmo certificado, com o mesmo número e a data da emissão original, sem criar outro registro. Ela funciona para os três tipos.
 - As regras:
-  - cada promoção tem **um único certificado** (pedir de novo dá **409**, e o caminho é a 2ª via);
+  - cada promoção, batismo ou apresentação tem **um único certificado** (pedir de novo dá **409**, e o caminho é a 2ª via);
   - rebaixamento não gera certificado de promoção, e membro desativado não recebe emissão nova (**422**). A 2ª via de um certificado já emitido continua funcionando;
-  - a emissão e a 2ª via respeitam o [escopo de acesso](#-funcionalidades).
+  - a emissão e a 2ª via respeitam o [escopo de acesso](#-funcionalidades): pelo membro, na promoção e no batismo; pela igreja da apresentação, na apresentação de criança.
 - O PDF é baixado com o nome `certificado-000001.pdf`.
 
 **Autenticação**
@@ -97,7 +111,6 @@ O projeto é construído **passo a passo, como um curso**, com foco em boas prá
 - O escopo é calculado a partir dos dados do banco a cada requisição, e não do token.
 
 ### 🔜 Planejadas
-- **Certificados em PDF de Batismo e de Apresentação de Criança**, com os registros desses eventos.
 - **Financeiro**: dízimos, ofertas (que podem ser anônimas), outras entradas, despesas e relatórios consolidados da matriz com as filiais.
 - Interface web em **React**.
 
@@ -111,7 +124,7 @@ O projeto é construído **passo a passo, como um curso**, com foco em boas prá
 | Líderes (Varões, Irmãs, Jovens, Crianças) | — | Ver o próprio grupo | — | ✔ do grupo | — |
 | Funcionário / Cozinheira | — | Ver o próprio perfil | — | — | — |
 
-> Esta é a matriz completa, o objetivo do projeto. **Já em vigor:** as permissões de igrejas, membros e usuários (veja a coluna *Permissão* em [Endpoints da API](#-endpoints-da-api)) e o [escopo de acesso](#-funcionalidades): os Líderes veem os membros e os aniversariantes do próprio grupo, e o Funcionário e a Cozinheira veem o próprio cadastro. Os aniversariantes já estão em vigor para todos os perfis da coluna. A emissão de certificados também já vale para o Pastor e o Secretário (permissão `Certificados.Emitir`). O financeiro chega no Módulo 5B.
+> Esta é a matriz completa, o objetivo do projeto. **Já em vigor:** as permissões de igrejas, membros e usuários (veja a coluna *Permissão* em [Endpoints da API](#-endpoints-da-api)) e o [escopo de acesso](#-funcionalidades): os Líderes veem os membros e os aniversariantes do próprio grupo, e o Funcionário e a Cozinheira veem o próprio cadastro. Os aniversariantes já estão em vigor para todos os perfis da coluna. A emissão de certificados também já vale para o Pastor e o Secretário (permissão `Certificados.Emitir`), assim como o registro de batismos e apresentações (permissão `Registros.Gerenciar`). O financeiro chega no Módulo 5B.
 
 ---
 
@@ -168,7 +181,7 @@ O backend segue a **Clean Architecture**: as dependências apontam sempre **para
 
 | Camada | Responsabilidade |
 |---|---|
-| **Domain** | Entidades (`Igreja`, `Membro`, `HistoricoCargo`, `CertificadoEmitido`), o value object `Endereco`, os enums e as **regras de negócio**. Nada é alterado "por fora": tudo passa por métodos que validam. |
+| **Domain** | Entidades (`Igreja`, `Membro`, `HistoricoCargo`, `Batismo`, `ApresentacaoCrianca`, `CertificadoEmitido`), o value object `Endereco`, os enums e as **regras de negócio**. Nada é alterado "por fora": tudo passa por métodos que validam. |
 | **Application** | Casos de uso (services), DTOs (`record`), validadores e as **interfaces** que a Infrastructure implementa: repositórios, Unit of Work, identidade, usuários, token e gerador de PDF. |
 | **Infrastructure** | Implementações técnicas: `TempleDbContext`, mapeamentos do EF, repositórios, ASP.NET Identity (usuários, perfis e mensagens em português), geração do JWT, geração do PDF (QuestPDF) e seeds. |
 | **Api** | Entrada HTTP: controllers, autenticação, políticas de autorização por permissão, `ProblemDetails` e Swagger. |
@@ -197,8 +210,9 @@ Temple/
 │   ├── global.json                  # fixa o SDK do .NET 10
 │   ├── Directory.Build.props        # avisos tratados como erro, análise de código
 │   ├── Temple.Domain/               # Entities, ValueObjects, Enums, Exceptions
-│   ├── Temple.Application/          # Igrejas, Membros, Aniversariantes, Certificados,
-│   │                                #   Usuarios, Autenticacao, Comum
+│   ├── Temple.Application/          # Igrejas, Membros, Aniversariantes, Batismos,
+│   │                                #   Apresentacoes, Certificados, Usuarios,
+│   │                                #   Autenticacao, Comum
 │   ├── Temple.Infrastructure/       # Persistence (DbContext, Configurations,
 │   │                                #   Migrations, Repositorios, Seed), Identidade,
 │   │                                #   Certificados (PDF)
@@ -253,11 +267,30 @@ Todas as rotas, **exceto o login**, exigem o cabeçalho `Authorization: Bearer <
 |---|---|---|---|
 | `GET` | `/api/membros/aniversariantes?mes=&igrejaId=` | Membros ativos que fazem aniversário no mês (sem `mes`, o mês atual), por dia e nome | Pastor, Secretário, Tesoureiro, Líderes |
 
-### Certificados
+### Batismo
 | Método | Rota | Descrição | Permissão |
 |---|---|---|---|
-| `POST` | `/api/membros/{membroId}/historico-cargos/{historicoCargoId}/certificado` | Emite o certificado de uma promoção do histórico, registra a emissão e devolve o PDF (`application/pdf`) | Pastor, Secretário |
-| `GET` | `/api/certificados/{numero}` | 2ª via: o mesmo PDF, com o mesmo número e a mesma data de emissão | Pastor, Secretário |
+| `POST` | `/api/membros/{membroId}/batismo` | Registra o batismo do membro (`dataBatismo`, `oficiante` e `local`, que é opcional) | Pastor, Secretário |
+| `GET` | `/api/membros/{membroId}/batismo` | Consulta o batismo do membro | Pastor, Secretário |
+| `PUT` | `/api/membros/{membroId}/batismo` | Corrige o batismo, enquanto não houver certificado | Pastor, Secretário |
+
+### Apresentações de criança
+| Método | Rota | Descrição | Permissão |
+|---|---|---|---|
+| `POST` | `/api/apresentacoes` | Registra uma apresentação (igreja, criança, nascimento, pai e/ou mãe, data e oficiante) | Pastor, Secretário |
+| `GET` | `/api/apresentacoes?igrejaId=` | Lista as apresentações, da mais recente para a mais antiga (o filtro `igrejaId` é opcional) | Pastor, Secretário |
+| `GET` | `/api/apresentacoes/{id}` | Busca uma apresentação | Pastor, Secretário |
+| `PUT` | `/api/apresentacoes/{id}` | Corrige a apresentação, enquanto não houver certificado | Pastor, Secretário |
+
+### Certificados
+Todas as rotas de emissão registram a emissão e devolvem o PDF (`application/pdf`).
+
+| Método | Rota | Descrição | Permissão |
+|---|---|---|---|
+| `POST` | `/api/membros/{membroId}/historico-cargos/{historicoCargoId}/certificado` | Emite o certificado de uma promoção do histórico | Pastor, Secretário |
+| `POST` | `/api/membros/{membroId}/batismo/certificado` | Emite o certificado de batismo do membro | Pastor, Secretário |
+| `POST` | `/api/apresentacoes/{apresentacaoId}/certificado` | Emite o certificado de apresentação de criança | Pastor, Secretário |
+| `GET` | `/api/certificados/{numero}` | 2ª via de qualquer certificado: o mesmo PDF, com o mesmo número e a mesma data de emissão | Pastor, Secretário |
 
 ### Usuários
 | Método | Rota | Descrição | Permissão |
@@ -364,7 +397,7 @@ npm run dev
 | 2 | Persistência: EF Core, relacionamentos, migrations e seed | ✅ |
 | 3 | Application e API: DTOs, services, validação, controllers, CRUD de igrejas e membros | ✅ |
 | 4 | Segurança: Identity + JWT, perfis e policies, vínculo usuário ↔ membro e escopo por igreja | ✅ |
-| 5 | Regras de negócio: aniversariantes ✅ · promoções ✅ · certificado de promoção em PDF ✅ · certificados de batismo e apresentação ⬜ | 🔄 |
+| 5 | Regras de negócio: aniversariantes, promoções, batismos, apresentações e certificados em PDF | ✅ |
 | 5B | Financeiro: dízimos, ofertas, despesas e relatórios | ⬜ |
 | 6 | Fundamentos do frontend: React, TypeScript, Tailwind e React Router | ⬜ |
 | 7 | Integração front + API: Axios, TanStack Query, login e rotas protegidas | ⬜ |
