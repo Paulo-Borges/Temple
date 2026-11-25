@@ -330,3 +330,119 @@ Authorization: Bearer {{token}}
 ### Certificado que não existe (404)
 GET {{baseUrl}}/api/certificados/999999
 Authorization: Bearer {{token}}
+
+
+
+### ===================== BATISMO (Pastor e Secretário) =====================
+
+### Registrar o batismo do membro cadastrado acima
+POST {{baseUrl}}/api/membros/{{criarMembro.response.body.$.id}}/batismo
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "dataBatismo": "2005-08-14",
+  "oficiante": "Pr. Antônio Ferreira",
+  "local": "Tanque batismal da igreja"
+}
+
+### Consultar o batismo do membro
+GET {{baseUrl}}/api/membros/{{criarMembro.response.body.$.id}}/batismo
+Authorization: Bearer {{token}}
+
+### Corrigir o batismo (só enquanto não houver certificado)
+PUT {{baseUrl}}/api/membros/{{criarMembro.response.body.$.id}}/batismo
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "dataBatismo": "2005-08-21",
+  "oficiante": "Pr. Antônio Ferreira",
+  "local": null
+}
+
+### Emitir o certificado de batismo (devolve o PDF)
+POST {{baseUrl}}/api/membros/{{criarMembro.response.body.$.id}}/batismo/certificado
+Authorization: Bearer {{token}}
+
+### Corrigir depois do certificado (422)
+PUT {{baseUrl}}/api/membros/{{criarMembro.response.body.$.id}}/batismo
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "dataBatismo": "2005-08-28",
+  "oficiante": "Pr. Antônio Ferreira"
+}
+
+
+### ===================== APRESENTAÇÃO DE CRIANÇA (Pastor e Secretário) =====================
+
+### Registrar uma apresentação na primeira igreja ativa
+# @name criarApresentacao
+POST {{baseUrl}}/api/apresentacoes
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "igrejaId": "{{igrejasAtivas.response.body.$[0].id}}",
+  "nomeDaCrianca": "Sofia Almeida",
+  "dataNascimentoDaCrianca": "2025-06-02",
+  "dataApresentacao": "2025-09-07",
+  "oficiante": "Pr. Antônio Ferreira",
+  "nomeDoPai": "Carlos Almeida",
+  "nomeDaMae": "Juliana Almeida"
+}
+
+### Listar as apresentações (o filtro igrejaId é opcional)
+GET {{baseUrl}}/api/apresentacoes
+Authorization: Bearer {{token}}
+
+### Obter a apresentação registrada acima
+GET {{baseUrl}}/api/apresentacoes/{{criarApresentacao.response.body.$.id}}
+Authorization: Bearer {{token}}
+
+### Corrigir a apresentação (só enquanto não houver certificado)
+PUT {{baseUrl}}/api/apresentacoes/{{criarApresentacao.response.body.$.id}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nomeDaCrianca": "Sofia Almeida Souza",
+  "dataNascimentoDaCrianca": "2025-06-02",
+  "dataApresentacao": "2025-09-07",
+  "oficiante": "Pr. Antônio Ferreira",
+  "nomeDoPai": null,
+  "nomeDaMae": "Juliana Almeida"
+}
+
+### Sem pai nem mãe (400)
+POST {{baseUrl}}/api/apresentacoes
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "igrejaId": "{{igrejasAtivas.response.body.$[0].id}}",
+  "nomeDaCrianca": "Criança Sem Pais",
+  "dataNascimentoDaCrianca": "2025-06-02",
+  "dataApresentacao": "2025-09-07",
+  "oficiante": "Pr. Antônio Ferreira"
+}
+
+### Criança com 12 anos ou mais na data (422)
+POST {{baseUrl}}/api/apresentacoes
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "igrejaId": "{{igrejasAtivas.response.body.$[0].id}}",
+  "nomeDaCrianca": "Pedro Grande",
+  "dataNascimentoDaCrianca": "2010-01-10",
+  "dataApresentacao": "2025-09-07",
+  "oficiante": "Pr. Antônio Ferreira",
+  "nomeDaMae": "Ana Grande"
+}
+
+### Emitir o certificado da apresentação (devolve o PDF)
+POST {{baseUrl}}/api/apresentacoes/{{criarApresentacao.response.body.$.id}}/certificado
+Authorization: Bearer {{token}}

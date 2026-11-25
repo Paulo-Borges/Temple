@@ -19,6 +19,18 @@ internal sealed class CertificadoRepository(TempleDbContext context) : ICertific
             .AnyAsync(certificado => certificado.HistoricoCargoId == historicoCargoId, cancellationToken);
     }
 
+        public Task<bool> ExisteParaBatismoAsync(Guid batismoId, CancellationToken cancellationToken)
+    {
+        return context.CertificadosEmitidos
+            .AnyAsync(certificado => certificado.BatismoId == batismoId, cancellationToken);
+    }
+
+    public Task<bool> ExisteParaApresentacaoAsync(Guid apresentacaoCriancaId, CancellationToken cancellationToken)
+    {
+        return context.CertificadosEmitidos
+            .AnyAsync(certificado => certificado.ApresentacaoCriancaId == apresentacaoCriancaId, cancellationToken);
+    }
+
     public void Adicionar(CertificadoEmitido certificado)
     {
         context.CertificadosEmitidos.Add(certificado);

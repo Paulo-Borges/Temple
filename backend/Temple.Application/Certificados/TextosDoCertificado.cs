@@ -27,6 +27,18 @@ internal static class TextosDoCertificado
         return data.ToString("d 'de' MMMM 'de' yyyy", PortuguesDoBrasil);
     }
 
+        // "filha" concorda com "a criança", então o texto serve para menino e menina.
+    public static string Filiacao(string? nomeDoPai, string? nomeDaMae)
+    {
+        return (nomeDoPai, nomeDaMae) switch
+        {
+            (string pai, string mae) => $"filha de {pai} e de {mae}",
+            (string pai, null) => $"filha de {pai}",
+            (null, string mae) => $"filha de {mae}",
+            (null, null) => throw new InvalidOperationException("A apresentação precisa ter o nome do pai ou da mãe.")
+        };
+    }
+
     public static string NomeDoArquivo(int numero)
     {
         return $"certificado-{numero:D6}.pdf";

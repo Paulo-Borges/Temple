@@ -154,9 +154,82 @@ namespace Temple.Infrastructure.Persistence.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("Temple.Domain.Entities.ApresentacaoCrianca", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateOnly>("DataApresentacao")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly>("DataNascimentoDaCrianca")
+                        .HasColumnType("date");
+
+                    b.Property<Guid>("IgrejaId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("NomeDaCrianca")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("NomeDaMae")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("NomeDoPai")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("Oficiante")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IgrejaId");
+
+                    b.ToTable("ApresentacoesCriancas", (string)null);
+                });
+
+            modelBuilder.Entity("Temple.Domain.Entities.Batismo", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateOnly>("DataBatismo")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Local")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<Guid>("MembroId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Oficiante")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MembroId")
+                        .IsUnique();
+
+                    b.ToTable("Batismos", (string)null);
+                });
+
             modelBuilder.Entity("Temple.Domain.Entities.CertificadoEmitido", b =>
                 {
                     b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("ApresentacaoCriancaId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("BatismoId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTimeOffset>("EmitidoEm")
@@ -173,7 +246,7 @@ namespace Temple.Infrastructure.Persistence.Migrations
                     b.Property<Guid?>("HistoricoCargoId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("MembroId")
+                    b.Property<Guid?>("MembroId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("Numero")
@@ -186,6 +259,14 @@ namespace Temple.Infrastructure.Persistence.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ApresentacaoCriancaId")
+                        .IsUnique()
+                        .HasFilter("[ApresentacaoCriancaId] IS NOT NULL");
+
+                    b.HasIndex("BatismoId")
+                        .IsUnique()
+                        .HasFilter("[BatismoId] IS NOT NULL");
 
                     b.HasIndex("HistoricoCargoId")
                         .IsUnique()
@@ -543,8 +624,36 @@ namespace Temple.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Temple.Domain.Entities.ApresentacaoCrianca", b =>
+                {
+                    b.HasOne("Temple.Domain.Entities.Igreja", null)
+                        .WithMany()
+                        .HasForeignKey("IgrejaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Temple.Domain.Entities.Batismo", b =>
+                {
+                    b.HasOne("Temple.Domain.Entities.Membro", null)
+                        .WithMany()
+                        .HasForeignKey("MembroId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Temple.Domain.Entities.CertificadoEmitido", b =>
                 {
+                    b.HasOne("Temple.Domain.Entities.ApresentacaoCrianca", null)
+                        .WithMany()
+                        .HasForeignKey("ApresentacaoCriancaId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Temple.Domain.Entities.Batismo", null)
+                        .WithMany()
+                        .HasForeignKey("BatismoId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("Temple.Domain.Entities.HistoricoCargo", null)
                         .WithMany()
                         .HasForeignKey("HistoricoCargoId")
@@ -553,8 +662,7 @@ namespace Temple.Infrastructure.Persistence.Migrations
                     b.HasOne("Temple.Domain.Entities.Membro", null)
                         .WithMany()
                         .HasForeignKey("MembroId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("Temple.Domain.Entities.HistoricoCargo", b =>

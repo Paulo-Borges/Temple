@@ -23,6 +23,29 @@ public sealed class CertificadosController(CertificadoService certificadoService
         return File(certificado.Conteudo, TipoPdf, certificado.NomeDoArquivo);
     }
 
+    [HttpPost("api/membros/{membroId:guid}/batismo/certificado")]
+    [ProducesResponseType<Stream>(StatusCodes.Status200OK, TipoPdf)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<FileContentResult> EmitirDeBatismo(Guid membroId, CancellationToken cancellationToken)
+    {
+        CertificadoPdf certificado = await certificadoService.EmitirDeBatismoAsync(membroId, cancellationToken);
+
+        return File(certificado.Conteudo, TipoPdf, certificado.NomeDoArquivo);
+    }
+
+    [HttpPost("api/apresentacoes/{apresentacaoId:guid}/certificado")]
+    [ProducesResponseType<Stream>(StatusCodes.Status200OK, TipoPdf)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    public async Task<FileContentResult> EmitirDeApresentacao(Guid apresentacaoId, CancellationToken cancellationToken)
+    {
+        CertificadoPdf certificado = await certificadoService.EmitirDeApresentacaoAsync(apresentacaoId, cancellationToken);
+
+        return File(certificado.Conteudo, TipoPdf, certificado.NomeDoArquivo);
+    }
+
     [HttpGet("api/certificados/{numero:int}")]
     [ProducesResponseType<Stream>(StatusCodes.Status200OK, TipoPdf)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]

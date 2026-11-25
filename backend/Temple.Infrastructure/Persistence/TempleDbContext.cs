@@ -12,7 +12,10 @@ public sealed class TempleDbContext(DbContextOptions<TempleDbContext> options)
     public DbSet<Igreja> Igrejas => Set<Igreja>();
     public DbSet<Membro> Membros => Set<Membro>();
     public DbSet<HistoricoCargo> HistoricoCargos => Set<HistoricoCargo>();
-     public DbSet<CertificadoEmitido> CertificadosEmitidos => Set<CertificadoEmitido>();
+    public DbSet<CertificadoEmitido> CertificadosEmitidos => Set<CertificadoEmitido>();
+
+    public DbSet<Batismo> Batismos => Set<Batismo>();
+    public DbSet<ApresentacaoCrianca> ApresentacoesCriancas => Set<ApresentacaoCrianca>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

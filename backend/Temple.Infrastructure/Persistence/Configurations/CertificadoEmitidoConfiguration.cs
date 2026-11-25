@@ -41,9 +41,29 @@ internal sealed class CertificadoEmitidoConfiguration : IEntityTypeConfiguration
             .HasForeignKey(certificado => certificado.HistoricoCargoId)
             .OnDelete(DeleteBehavior.Restrict);
 
+                builder.HasOne<Batismo>()
+            .WithMany()
+            .HasForeignKey(certificado => certificado.BatismoId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne<ApresentacaoCrianca>()
+            .WithMany()
+            .HasForeignKey(certificado => certificado.ApresentacaoCriancaId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         // Uma promoção tem um único certificado.
         builder.HasIndex(certificado => certificado.HistoricoCargoId)
             .IsUnique()
             .HasFilter("[HistoricoCargoId] IS NOT NULL");
+
+        // Um batismo tem um único certificado.
+        builder.HasIndex(certificado => certificado.BatismoId)
+            .IsUnique()
+            .HasFilter("[BatismoId] IS NOT NULL");
+
+        // Uma apresentação tem um único certificado.
+        builder.HasIndex(certificado => certificado.ApresentacaoCriancaId)
+            .IsUnique()
+            .HasFilter("[ApresentacaoCriancaId] IS NOT NULL");
     }
 }

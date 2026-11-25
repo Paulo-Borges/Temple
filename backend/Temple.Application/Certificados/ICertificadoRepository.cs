@@ -8,5 +8,9 @@ public interface ICertificadoRepository
 
     Task<bool> ExisteParaPromocaoAsync(Guid historicoCargoId, CancellationToken cancellationToken);
 
+        Task<bool> ExisteParaBatismoAsync(Guid batismoId, CancellationToken cancellationToken);
+
+    Task<bool> ExisteParaApresentacaoAsync(Guid apresentacaoCriancaId, CancellationToken cancellationToken);
+
     void Adicionar(CertificadoEmitido certificado);
 }

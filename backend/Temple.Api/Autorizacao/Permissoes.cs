@@ -13,5 +13,7 @@ internal static class Permissoes
     
     public const string VerAniversariantes = "Aniversariantes.Ver";
 
-    public const string EmitirCertificados = "Certificados.Emitir";
+     public const string EmitirCertificados = "Certificados.Emitir";
+
+    public const string GerenciarRegistros = "Registros.Gerenciar";  
 }
