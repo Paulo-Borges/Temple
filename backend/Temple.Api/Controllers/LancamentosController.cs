@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Temple.Application.Comum;
 using Microsoft.AspNetCore.Mvc;
 using Temple.Api.Autorizacao;
 using Temple.Application.Lancamentos;
@@ -56,6 +57,16 @@ public sealed class LancamentosController(LancamentoService lancamentoService) :
         LancamentoResponse lancamento = await lancamentoService.RegistrarDespesaAsync(request, cancellationToken);
 
         return CreatedAtAction(nameof(ObterPorId), new { id = lancamento.Id }, lancamento);
+    }
+
+    [HttpGet]
+    [ProducesResponseType<PaginaResponse<LancamentoResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<HttpValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<PaginaResponse<LancamentoResponse>>> Listar([FromQuery] ListarLancamentosRequest filtro, CancellationToken cancellationToken)
+    {
+        PaginaResponse<LancamentoResponse> pagina = await lancamentoService.ListarAsync(filtro, cancellationToken);
+
+        return Ok(pagina);
     }
 
     [HttpGet("{id:guid}")]

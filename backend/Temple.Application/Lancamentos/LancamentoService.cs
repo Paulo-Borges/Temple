@@ -1,5 +1,6 @@
 using FluentValidation;
 using Temple.Application.Autenticacao;
+using Temple.Application.Comum;
 using Temple.Application.Comum.Acesso;
 using Temple.Application.Comum.Excecoes;
 using Temple.Application.Comum.Persistencia;
@@ -22,8 +23,26 @@ public sealed class LancamentoService(
     IValidator<CriarOfertaRequest> ofertaValidator,
     IValidator<CriarOutraEntradaRequest> outraEntradaValidator,
     IValidator<CriarDespesaRequest> despesaValidator,
-    IValidator<EstornarLancamentoRequest> estornoValidator)
+    IValidator<EstornarLancamentoRequest> estornoValidator,
+    IValidator<ListarLancamentosRequest> listarValidator)
 {
+
+        public async Task<PaginaResponse<LancamentoResponse>> ListarAsync(ListarLancamentosRequest filtro, CancellationToken cancellationToken)
+    {
+        await listarValidator.ValidateAndThrowAsync(filtro, cancellationToken);
+
+        EscopoDeAcesso escopo = await provedorDeEscopo.ObterAsync(cancellationToken);
+
+        ResultadoPaginado<Lancamento> resultado = await lancamentoRepository.ListarAsync(filtro, escopo, cancellationToken);
+
+        List<LancamentoResponse> itens = resultado.Itens
+            .Select(lancamento => lancamento.ParaResponse())
+            .ToList();
+
+        int totalPaginas = (resultado.TotalItens + filtro.TamanhoPagina - 1) / filtro.TamanhoPagina;
+
+        return new PaginaResponse<LancamentoResponse>(itens, filtro.Pagina, filtro.TamanhoPagina, resultado.TotalItens, totalPaginas);
+    }
     public async Task<LancamentoResponse> RegistrarDizimoAsync(CriarDizimoRequest request, CancellationToken cancellationToken)
     {
         await dizimoValidator.ValidateAndThrowAsync(request, cancellationToken);

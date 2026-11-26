@@ -515,6 +515,18 @@ Content-Type: application/json
   "formaPagamento": "Pix"
 }
 
+### Listar os lançamentos de novembro da primeira igreja ativa (paginado; mais recentes primeiro)
+GET {{baseUrl}}/api/lancamentos?igrejaId={{igrejasAtivas.response.body.$[0].id}}&de=2026-11-01&ate=2026-11-30
+Authorization: Bearer {{token}}
+
+### Listar só as despesas, sem os estornados
+GET {{baseUrl}}/api/lancamentos?tipo=Despesa&incluirEstornados=false&pagina=1&tamanhoPagina=10
+Authorization: Bearer {{token}}
+
+### Período invertido (400)
+GET {{baseUrl}}/api/lancamentos?de=2026-11-30&ate=2026-11-01
+Authorization: Bearer {{token}}
+
 ### Obter o dízimo registrado acima
 GET {{baseUrl}}/api/lancamentos/{{criarDizimo.response.body.$.id}}
 Authorization: Bearer {{token}}

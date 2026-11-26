@@ -76,6 +76,22 @@ O projeto é construído **passo a passo, como um curso**, com foco em boas prá
   - a emissão e a 2ª via respeitam o [escopo de acesso](#-funcionalidades): pelo membro, na promoção e no batismo; pela igreja da apresentação, na apresentação de criança.
 - O PDF é baixado com o nome `certificado-000001.pdf`.
 
+**Financeiro**
+- Quatro tipos de **lançamento**, cada um com a sua rota:
+  - **Dízimo:** sempre de um membro, lançado na igreja do membro;
+  - **Oferta:** pode ser **anônima** ou identificada. A identificada aceita membro de qualquer igreja, como o visitante de outra congregação;
+  - **Outra entrada:** como a venda da cantina, com descrição obrigatória;
+  - **Despesa:** com **categoria** fixa (Água, Energia, Aluguel, Manutenção, Salários, Missões, Material ou Outras) e descrição obrigatória.
+- Todo lançamento tem igreja, data, valor e forma de pagamento (Dinheiro, Pix, Cartão ou Transferência). O dízimo e a oferta aceitam uma observação.
+- As regras:
+  - o valor é maior que zero, com **no máximo 2 casas decimais**, e é guardado em `decimal(18,2)`, nunca em ponto flutuante;
+  - a data não pode estar no futuro;
+  - a igreja precisa estar ativa, e o membro também (**422**).
+- O lançamento **não é editado nem apagado**. Um lançamento errado é **estornado**, com motivo obrigatório: ele continua no histórico, marcado como estornado, e deixa de contar no saldo. Só o **Pastor** estorna, e um lançamento só pode ser estornado uma vez.
+- Cada lançamento guarda quem o registrou e, se for o caso, quem o estornou (id e uma cópia do nome) e quando.
+- A consulta é **paginada**, com filtros por igreja, período, tipo, membro e estornados, e mostra os mais recentes primeiro. Ela respeita o [escopo de acesso](#-funcionalidades): o Tesoureiro de uma filial vê só a própria filial.
+- O banco também protege as regras principais com **CHECK constraints**, como valor positivo, dízimo sempre com membro e categoria só na despesa.
+
 **Autenticação**
 - Login com e-mail e senha (ASP.NET Identity), devolvendo um **token JWT** que vale 8 horas.
 - **Todas as rotas exigem login**, exceto a própria rota de login.
@@ -111,7 +127,7 @@ O projeto é construído **passo a passo, como um curso**, com foco em boas prá
 - O escopo é calculado a partir dos dados do banco a cada requisição, e não do token.
 
 ### 🔜 Planejadas
-- **Financeiro**: dízimos, ofertas (que podem ser anônimas), outras entradas, despesas e relatórios consolidados da matriz com as filiais.
+- **Relatórios do financeiro**: saldo e fechamento mensal por igreja, o consolidado da matriz com as filiais e o comprovante de dízimo em PDF.
 - Interface web em **React**.
 
 ### 🔐 Matriz de permissões (aprovada)
@@ -120,11 +136,11 @@ O projeto é construído **passo a passo, como um curso**, com foco em boas prá
 |---|---|---|---|---|---|
 | Pastor (administrador) | Total | Total | Total | ✔ | Total |
 | Secretário | Ver | Criar e editar | Emitir | ✔ | — |
-| Tesoureiro | Ver | Ver | — | ✔ | Criar, editar e relatórios |
+| Tesoureiro | Ver | Ver | — | ✔ | Lançar, consultar e relatórios |
 | Líderes (Varões, Irmãs, Jovens, Crianças) | — | Ver o próprio grupo | — | ✔ do grupo | — |
 | Funcionário / Cozinheira | — | Ver o próprio perfil | — | — | — |
 
-> Esta é a matriz completa, o objetivo do projeto. **Já em vigor:** as permissões de igrejas, membros e usuários (veja a coluna *Permissão* em [Endpoints da API](#-endpoints-da-api)) e o [escopo de acesso](#-funcionalidades): os Líderes veem os membros e os aniversariantes do próprio grupo, e o Funcionário e a Cozinheira veem o próprio cadastro. Os aniversariantes já estão em vigor para todos os perfis da coluna. A emissão de certificados também já vale para o Pastor e o Secretário (permissão `Certificados.Emitir`), assim como o registro de batismos e apresentações (permissão `Registros.Gerenciar`). O financeiro chega no Módulo 5B.
+> Esta é a matriz completa, o objetivo do projeto. **Já em vigor:** as permissões de igrejas, membros e usuários (veja a coluna *Permissão* em [Endpoints da API](#-endpoints-da-api)) e o [escopo de acesso](#-funcionalidades): os Líderes veem os membros e os aniversariantes do próprio grupo, e o Funcionário e a Cozinheira veem o próprio cadastro. Os aniversariantes já estão em vigor para todos os perfis da coluna. A emissão de certificados também já vale para o Pastor e o Secretário (permissão `Certificados.Emitir`), assim como o registro de batismos e apresentações (permissão `Registros.Gerenciar`). No financeiro, o Pastor e o Tesoureiro já lançam e consultam (permissão `Financeiro.Lancar`), e só o Pastor estorna (permissão `Financeiro.Estornar`). Os relatórios chegam no restante do Módulo 5B.
 
 ---
 
@@ -181,7 +197,7 @@ O backend segue a **Clean Architecture**: as dependências apontam sempre **para
 
 | Camada | Responsabilidade |
 |---|---|
-| **Domain** | Entidades (`Igreja`, `Membro`, `HistoricoCargo`, `Batismo`, `ApresentacaoCrianca`, `CertificadoEmitido`), o value object `Endereco`, os enums e as **regras de negócio**. Nada é alterado "por fora": tudo passa por métodos que validam. |
+| **Domain** | Entidades (`Igreja`, `Membro`, `HistoricoCargo`, `Batismo`, `ApresentacaoCrianca`, `CertificadoEmitido`, `Lancamento`), o value object `Endereco`, os enums e as **regras de negócio**. Nada é alterado "por fora": tudo passa por métodos que validam. |
 | **Application** | Casos de uso (services), DTOs (`record`), validadores e as **interfaces** que a Infrastructure implementa: repositórios, Unit of Work, identidade, usuários, token e gerador de PDF. |
 | **Infrastructure** | Implementações técnicas: `TempleDbContext`, mapeamentos do EF, repositórios, ASP.NET Identity (usuários, perfis e mensagens em português), geração do JWT, geração do PDF (QuestPDF) e seeds. |
 | **Api** | Entrada HTTP: controllers, autenticação, políticas de autorização por permissão, `ProblemDetails` e Swagger. |
@@ -211,8 +227,8 @@ Temple/
 │   ├── Directory.Build.props        # avisos tratados como erro, análise de código
 │   ├── Temple.Domain/               # Entities, ValueObjects, Enums, Exceptions
 │   ├── Temple.Application/          # Igrejas, Membros, Aniversariantes, Batismos,
-│   │                                #   Apresentacoes, Certificados, Usuarios,
-│   │                                #   Autenticacao, Comum
+│   │                                #   Apresentacoes, Certificados, Lancamentos,
+│   │                                #   Usuarios, Autenticacao, Comum
 │   ├── Temple.Infrastructure/       # Persistence (DbContext, Configurations,
 │   │                                #   Migrations, Repositorios, Seed), Identidade,
 │   │                                #   Certificados (PDF)
@@ -291,6 +307,19 @@ Todas as rotas de emissão registram a emissão e devolvem o PDF (`application/p
 | `POST` | `/api/membros/{membroId}/batismo/certificado` | Emite o certificado de batismo do membro | Pastor, Secretário |
 | `POST` | `/api/apresentacoes/{apresentacaoId}/certificado` | Emite o certificado de apresentação de criança | Pastor, Secretário |
 | `GET` | `/api/certificados/{numero}` | 2ª via de qualquer certificado: o mesmo PDF, com o mesmo número e a mesma data de emissão | Pastor, Secretário |
+
+### Financeiro
+As rotas de criação respondem **201** com o lançamento e o cabeçalho `Location`.
+
+| Método | Rota | Descrição | Permissão |
+|---|---|---|---|
+| `POST` | `/api/lancamentos/dizimos` | Lança um dízimo (`igrejaId`, `membroId`, `data`, `valor`, `formaPagamento` e `observacao`, que é opcional) | Pastor, Tesoureiro |
+| `POST` | `/api/lancamentos/ofertas` | Lança uma oferta; sem `membroId`, ela é anônima | Pastor, Tesoureiro |
+| `POST` | `/api/lancamentos/outras-entradas` | Lança outra entrada, com `descricao` obrigatória | Pastor, Tesoureiro |
+| `POST` | `/api/lancamentos/despesas` | Lança uma despesa, com `categoria` e `descricao` obrigatórias | Pastor, Tesoureiro |
+| `GET` | `/api/lancamentos?igrejaId=&de=&ate=&tipo=&membroId=&incluirEstornados=true&pagina=1&tamanhoPagina=20` | Lista paginada com filtros, dos mais recentes para os mais antigos (máximo de 100 por página) | Pastor, Tesoureiro |
+| `GET` | `/api/lancamentos/{id}` | Busca um lançamento | Pastor, Tesoureiro |
+| `POST` | `/api/lancamentos/{id}/estornar` | Estorna o lançamento (`motivo` obrigatório) e devolve o lançamento atualizado | Pastor |
 
 ### Usuários
 | Método | Rota | Descrição | Permissão |
@@ -375,6 +404,8 @@ npm run dev
 - **Erros padronizados** com `ProblemDetails` (RFC 9457) e um handler global.
 - **Segurança**: senhas com hash (Identity), bloqueio após tentativas erradas, JWT com emissor, audiência, algoritmo e validade conferidos, rotas **fechadas por padrão** (*fallback policy*), **autorização por permissão** (*policies* que concentram a matriz perfil → permissão num lugar só), **escopo de acesso** aplicado na consulta ao banco (fora do alcance é 404, para não revelar dados de outras igrejas) e segredos no *user-secrets*.
 - **Migrations revisadas à mão** antes de aplicar. Por exemplo, a coluna `Ativo` entrou com valor padrão `true`, para não desativar os membros que já existiam, e as colunas de auditoria do histórico entraram anuláveis, para não inventar um autor para os registros antigos.
+- **Dinheiro em `decimal`**, nunca em `double`, com a precisão `decimal(18,2)` declarada no mapeamento e a mesma constante de casas decimais no domínio e no banco.
+- **Regras também no banco** com CHECK constraints, como a segunda barreira contra um `INSERT` manual ou um bug. Os números dos enums vêm do próprio enum, sem número solto no SQL.
 - **Relógio injetado** (`TimeProvider`) no lugar de `DateTime.Now` nas regras novas: o domínio recebe a data e a hora de quem chama, e os testes podem simular qualquer dia.
 
 **React / TypeScript** *(a partir do Módulo 6)*
@@ -398,7 +429,7 @@ npm run dev
 | 3 | Application e API: DTOs, services, validação, controllers, CRUD de igrejas e membros | ✅ |
 | 4 | Segurança: Identity + JWT, perfis e policies, vínculo usuário ↔ membro e escopo por igreja | ✅ |
 | 5 | Regras de negócio: aniversariantes, promoções, batismos, apresentações e certificados em PDF | ✅ |
-| 5B | Financeiro: dízimos, ofertas, despesas e relatórios | ⬜ |
+| 5B | Financeiro: dízimos, ofertas, despesas e relatórios | 🔄 |
 | 6 | Fundamentos do frontend: React, TypeScript, Tailwind e React Router | ⬜ |
 | 7 | Integração front + API: Axios, TanStack Query, login e rotas protegidas | ⬜ |
 | 8 | Funcionalidades finais: aniversariantes, certificados e financeiro na tela | ⬜ |
