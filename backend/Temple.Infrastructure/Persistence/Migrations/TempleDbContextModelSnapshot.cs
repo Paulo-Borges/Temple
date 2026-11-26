@@ -406,6 +406,80 @@ namespace Temple.Infrastructure.Persistence.Migrations
                     b.ToTable("Igrejas", (string)null);
                 });
 
+            modelBuilder.Entity("Temple.Domain.Entities.Lancamento", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int?>("Categoria")
+                        .HasColumnType("int");
+
+                    b.Property<DateOnly>("Data")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Descricao")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTimeOffset?>("EstornadoEm")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("EstornadoPorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("EstornadoPorNome")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<int>("FormaPagamento")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("IgrejaId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("MembroId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("MotivoDoEstorno")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTimeOffset>("RegistradoEm")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("RegistradoPorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("RegistradoPorNome")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<int>("Tipo")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Valor")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IgrejaId", "Data");
+
+                    b.HasIndex("MembroId", "Data");
+
+                    b.ToTable("Lancamentos", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Lancamentos_Categoria", "([Tipo] = 4 AND [Categoria] IS NOT NULL) OR ([Tipo] <> 4 AND [Categoria] IS NULL)");
+
+                            t.HasCheckConstraint("CK_Lancamentos_Estorno", "([MotivoDoEstorno] IS NULL AND [EstornadoPorId] IS NULL AND [EstornadoPorNome] IS NULL AND [EstornadoEm] IS NULL) OR ([MotivoDoEstorno] IS NOT NULL AND [EstornadoPorId] IS NOT NULL AND [EstornadoPorNome] IS NOT NULL AND [EstornadoEm] IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_Lancamentos_Membro", "([Tipo] = 1 AND [MembroId] IS NOT NULL) OR [Tipo] = 2 OR ([Tipo] IN (3, 4) AND [MembroId] IS NULL)");
+
+                            t.HasCheckConstraint("CK_Lancamentos_Valor", "[Valor] > 0");
+                        });
+                });
+
             modelBuilder.Entity("Temple.Domain.Entities.Membro", b =>
                 {
                     b.Property<Guid>("Id")
@@ -682,6 +756,20 @@ namespace Temple.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("IgrejaMatriz");
+                });
+
+            modelBuilder.Entity("Temple.Domain.Entities.Lancamento", b =>
+                {
+                    b.HasOne("Temple.Domain.Entities.Igreja", null)
+                        .WithMany()
+                        .HasForeignKey("IgrejaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Temple.Domain.Entities.Membro", null)
+                        .WithMany()
+                        .HasForeignKey("MembroId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("Temple.Domain.Entities.Membro", b =>

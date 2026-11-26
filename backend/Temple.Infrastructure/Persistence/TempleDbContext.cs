@@ -17,6 +17,8 @@ public sealed class TempleDbContext(DbContextOptions<TempleDbContext> options)
     public DbSet<Batismo> Batismos => Set<Batismo>();
     public DbSet<ApresentacaoCrianca> ApresentacoesCriancas => Set<ApresentacaoCrianca>();
 
+    public DbSet<Lancamento> Lancamentos => Set<Lancamento>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
