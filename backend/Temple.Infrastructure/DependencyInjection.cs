@@ -9,6 +9,7 @@ using Temple.Application.Comum.Persistencia;
 using Temple.Application.Igrejas;
 using Temple.Application.Lancamentos;
 using Temple.Application.Membros;
+using Temple.Application.RelatoriosFinanceiros;
 using Temple.Infrastructure.Certificados;
 using Temple.Infrastructure.Identidade;
 using Temple.Infrastructure.Persistence;
@@ -71,6 +72,7 @@ public static class DependencyInjection
         services.AddScoped<IBatismoRepository, BatismoRepository>();            
         services.AddScoped<IApresentacaoRepository, ApresentacaoRepository>();  
         services.AddScoped<ILancamentoRepository, LancamentoRepository>(); 
+        services.AddScoped<IRelatorioFinanceiroRepository, RelatorioFinanceiroRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         QuestPDF.Settings.License = LicenseType.Community;                    
         services.AddSingleton<IGeradorDeCertificadoPdf, GeradorDeCertificadoPdf>();

@@ -36,7 +36,7 @@ public sealed class Lancamento
     public string? EstornadoPorNome { get; private set; }
     public DateTimeOffset? EstornadoEm { get; private set; }
 
-    public NaturezaLancamento Natureza => Tipo == TipoLancamento.Despesa ? NaturezaLancamento.Saida : NaturezaLancamento.Entrada;
+    public NaturezaLancamento Natureza => NaturezaDo(Tipo);
 
     public bool Estornado => EstornadoEm is not null;
 
@@ -207,6 +207,12 @@ public sealed class Lancamento
             igreja, TipoLancamento.Despesa, membroId: null, categoria,
             data, valor, formaPagamento, descricao, descricaoObrigatoria: true,
             registradoPorId, registradoPorNome, agora);
+    }
+
+        // A regra única de natureza: só a despesa é saída. Os relatórios usam este método sem precisar da entidade.
+    public static NaturezaLancamento NaturezaDo(TipoLancamento tipo)
+    {
+        return tipo == TipoLancamento.Despesa ? NaturezaLancamento.Saida : NaturezaLancamento.Entrada;
     }
 
     // Saldo: a entrada soma e a saída subtrai. O lançamento estornado não entra no saldo.

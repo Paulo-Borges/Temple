@@ -548,3 +548,17 @@ Content-Type: application/json
 {
   "motivo": "Segunda tentativa"
 }
+
+### ===================== RELATÓRIOS FINANCEIROS (Pastor e Tesoureiro) =====================
+
+### Relatório mensal da primeira igreja ativa (saldo anterior, entradas por tipo, saídas por categoria e saldo final)
+GET {{baseUrl}}/api/relatorios-financeiros/mensal?igrejaId={{igrejasAtivas.response.body.$[0].id}}&ano=2026&mes=11
+Authorization: Bearer {{token}}
+
+### Consolidado da matriz cadastrada no início do arquivo com as filiais dela
+GET {{baseUrl}}/api/relatorios-financeiros/consolidado?igrejaId={{criarMatriz.response.body.$.id}}&ano=2026&mes=11
+Authorization: Bearer {{token}}
+
+### Mês no futuro (400)
+GET {{baseUrl}}/api/relatorios-financeiros/mensal?igrejaId={{igrejasAtivas.response.body.$[0].id}}&ano=2099&mes=1
+Authorization: Bearer {{token}}
