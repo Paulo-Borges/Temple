@@ -446,3 +446,93 @@ Content-Type: application/json
 ### Emitir o certificado da apresentação (devolve o PDF)
 POST {{baseUrl}}/api/apresentacoes/{{criarApresentacao.response.body.$.id}}/certificado
 Authorization: Bearer {{token}}
+
+### ===================== FINANCEIRO (Pastor e Tesoureiro; só o Pastor estorna) =====================
+
+### Registrar um dízimo do membro cadastrado acima (o membro precisa ser da mesma igreja)
+# @name criarDizimo
+POST {{baseUrl}}/api/lancamentos/dizimos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "igrejaId": "{{igrejasAtivas.response.body.$[0].id}}",
+  "membroId": "{{criarMembro.response.body.$.id}}",
+  "data": "2026-11-01",
+  "valor": 350.00,
+  "formaPagamento": "Pix",
+  "observacao": "Envelope 12"
+}
+
+### Registrar uma oferta anônima (sem membroId)
+POST {{baseUrl}}/api/lancamentos/ofertas
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "igrejaId": "{{igrejasAtivas.response.body.$[0].id}}",
+  "data": "2026-11-01",
+  "valor": 87.50,
+  "formaPagamento": "Dinheiro"
+}
+
+### Registrar outra entrada (a descrição é obrigatória)
+POST {{baseUrl}}/api/lancamentos/outras-entradas
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "igrejaId": "{{igrejasAtivas.response.body.$[0].id}}",
+  "data": "2026-11-02",
+  "valor": 240.00,
+  "formaPagamento": "Cartao",
+  "descricao": "Venda da cantina"
+}
+
+### Registrar uma despesa (categoria e descrição obrigatórias)
+POST {{baseUrl}}/api/lancamentos/despesas
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "igrejaId": "{{igrejasAtivas.response.body.$[0].id}}",
+  "categoria": "Energia",
+  "data": "2026-11-05",
+  "valor": 189.90,
+  "formaPagamento": "Transferencia",
+  "descricao": "Conta de luz de outubro"
+}
+
+### Valor com 3 casas decimais (400)
+POST {{baseUrl}}/api/lancamentos/ofertas
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "igrejaId": "{{igrejasAtivas.response.body.$[0].id}}",
+  "data": "2026-11-01",
+  "valor": 10.005,
+  "formaPagamento": "Pix"
+}
+
+### Obter o dízimo registrado acima
+GET {{baseUrl}}/api/lancamentos/{{criarDizimo.response.body.$.id}}
+Authorization: Bearer {{token}}
+
+### Estornar o dízimo (só o Pastor)
+POST {{baseUrl}}/api/lancamentos/{{criarDizimo.response.body.$.id}}/estornar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "motivo": "Lançado em dobro"
+}
+
+### Estornar de novo (422)
+POST {{baseUrl}}/api/lancamentos/{{criarDizimo.response.body.$.id}}/estornar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "motivo": "Segunda tentativa"
+}

@@ -16,4 +16,6 @@ internal static class Permissoes
      public const string EmitirCertificados = "Certificados.Emitir";
 
     public const string GerenciarRegistros = "Registros.Gerenciar";  
+    public const string LancarFinanceiro = "Financeiro.Lancar";
+    public const string EstornarFinanceiro = "Financeiro.Estornar";
 }
