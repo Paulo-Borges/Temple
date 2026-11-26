@@ -16,6 +16,11 @@ public sealed class Lancamento
     public Guid Id { get; private set; }
     public Guid IgrejaId { get; private set; }
     public TipoLancamento Tipo { get; private set; }
+        // Obrigatório no dízimo, opcional na oferta (nulo é oferta anônima) e sempre nulo nos outros tipos.
+    public Guid? MembroId { get; private set; }
+
+    // Preenchida só na despesa.
+    public CategoriaDespesa? Categoria { get; private set; }
     public DateOnly Data { get; private set; }
     public decimal Valor { get; private set; }
     public FormaPagamento FormaPagamento { get; private set; }
@@ -40,6 +45,8 @@ public sealed class Lancamento
         Guid id,
         Guid igrejaId,
         TipoLancamento tipo,
+        Guid? membroId,
+        CategoriaDespesa? categoria,
         DateOnly data,
         decimal valor,
         FormaPagamento formaPagamento,
@@ -55,6 +62,8 @@ public sealed class Lancamento
         Id = id;
         IgrejaId = igrejaId;
         Tipo = tipo;
+        MembroId = membroId;
+        Categoria = categoria;
         Data = data;
         Valor = valor;
         FormaPagamento = formaPagamento;
@@ -68,10 +77,12 @@ public sealed class Lancamento
         EstornadoEm = estornadoEm;
     }
 
-    // Usado pelas fábricas de cada tipo (Aula 5B.2), que acrescentam as regras próprias.
+       // Usado pelas fábricas de cada tipo, que acrescentam as regras próprias.
     private Lancamento(
         Igreja igreja,
         TipoLancamento tipo,
+        Guid? membroId,
+        CategoriaDespesa? categoria,
         DateOnly data,
         decimal valor,
         FormaPagamento formaPagamento,
@@ -96,6 +107,8 @@ public sealed class Lancamento
         Id = Guid.NewGuid();
         IgrejaId = igreja.Id;
         Tipo = tipo;
+        MembroId = membroId;
+        Categoria = categoria;
         Data = ValidarData(data, agora);
         Valor = ValidarValor(valor);
         FormaPagamento = ValidarFormaPagamento(formaPagamento);
@@ -103,6 +116,97 @@ public sealed class Lancamento
         RegistradoPorId = registradoPorId;
         RegistradoPorNome = ValidarNomeDoAutor(registradoPorNome, "quem registrou o lançamento");
         RegistradoEm = agora;
+    }
+
+        public static Lancamento Dizimo(
+        Igreja igreja,
+        Membro membro,
+        DateOnly data,
+        decimal valor,
+        FormaPagamento formaPagamento,
+        string? observacao,
+        Guid registradoPorId,
+        string registradoPorNome,
+        DateTimeOffset agora)
+    {
+        ArgumentNullException.ThrowIfNull(igreja);
+        ArgumentNullException.ThrowIfNull(membro);
+
+        ValidarMembroAtivo(membro);
+
+        if (membro.IgrejaId != igreja.Id)
+        {
+            throw new DomainException("O dízimo deve ser lançado na igreja do membro.");
+        }
+
+        return new Lancamento(
+            igreja, TipoLancamento.Dizimo, membro.Id, categoria: null,
+            data, valor, formaPagamento, observacao, descricaoObrigatoria: false,
+            registradoPorId, registradoPorNome, agora);
+    }
+
+    // Sem membro, a oferta é anônima. Com membro, pode ser lançada em qualquer igreja.
+    public static Lancamento Oferta(
+        Igreja igreja,
+        Membro? membro,
+        DateOnly data,
+        decimal valor,
+        FormaPagamento formaPagamento,
+        string? observacao,
+        Guid registradoPorId,
+        string registradoPorNome,
+        DateTimeOffset agora)
+    {
+        Guid? membroId = null;
+
+        if (membro is not null)
+        {
+            ValidarMembroAtivo(membro);
+            membroId = membro.Id;
+        }
+
+        return new Lancamento(
+            igreja, TipoLancamento.Oferta, membroId, categoria: null,
+            data, valor, formaPagamento, observacao, descricaoObrigatoria: false,
+            registradoPorId, registradoPorNome, agora);
+    }
+
+    public static Lancamento OutraEntrada(
+        Igreja igreja,
+        DateOnly data,
+        decimal valor,
+        FormaPagamento formaPagamento,
+        string descricao,
+        Guid registradoPorId,
+        string registradoPorNome,
+        DateTimeOffset agora)
+    {
+        return new Lancamento(
+            igreja, TipoLancamento.OutraEntrada, membroId: null, categoria: null,
+            data, valor, formaPagamento, descricao, descricaoObrigatoria: true,
+            registradoPorId, registradoPorNome, agora);
+    }
+
+    public static Lancamento Despesa(
+        Igreja igreja,
+        CategoriaDespesa categoria,
+        DateOnly data,
+        decimal valor,
+        FormaPagamento formaPagamento,
+        string descricao,
+        Guid registradoPorId,
+        string registradoPorNome,
+        DateTimeOffset agora)
+    {
+        if (!Enum.IsDefined(categoria))
+        {
+            throw new DomainException("Categoria de despesa inválida.");
+        }
+
+        return new Lancamento(
+            igreja, TipoLancamento.Despesa, membroId: null, categoria,
+            data, valor, formaPagamento, descricao, descricaoObrigatoria: true,
+            registradoPorId, registradoPorNome, agora);
     }
 
     // Saldo: a entrada soma e a saída subtrai. O lançamento estornado não entra no saldo.
@@ -131,6 +235,14 @@ public sealed class Lancamento
         EstornadoPorId = estornadoPorId;
         EstornadoPorNome = nomeValidado;
         EstornadoEm = agora;
+    }
+
+        private static void ValidarMembroAtivo(Membro membro)
+    {
+        if (!membro.Ativo)
+        {
+            throw new DomainException("Não é possível lançar contribuição no nome de um membro desativado.");
+        }
     }
 
     private static DateOnly ValidarData(DateOnly data, DateTimeOffset agora)
