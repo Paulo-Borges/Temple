@@ -10,7 +10,7 @@
 
 | Módulo | Tema | Aulas com perguntas |
 |---|---|---|
-| 6 | [Fundamentos do Frontend](#módulo-6-fundamentos-do-frontend) | 6.1, 6.2 |
+| 6 | [Fundamentos do Frontend](#módulo-6-fundamentos-do-frontend) | 6.1, 6.2, 6.3 |
 | — | [Git](#git) | — |
 
 ---
@@ -122,6 +122,44 @@
 
 **Por que `import type`?**
 > Para importar algo que é só tipo (como o `ReactNode`). A linha some inteira no build. Com o `verbatimModuleSyntax` ligado, o TypeScript exige o `import type` nesses casos.
+
+### Aula 6.3: Tipos TypeScript espelhando os DTOs do C#
+
+**Por que tipar as respostas da API?**
+> O JSON chega como texto, e sem tipo o TypeScript não sabe o que há dentro. Com o tipo, o editor completa os campos, um erro de digitação como `membro.cargoAtaul` quebra o build, e, se o backend mudar um campo, basta atualizar o tipo para o compilador apontar todos os lugares afetados.
+
+**O tipo TypeScript garante que a API mandou aquilo?**
+> Não. Os tipos **somem no build** e não conferem nada em tempo de execução: são uma promessa sobre o formato. Para conferir de verdade, valida-se a resposta com uma biblioteca como o **Zod**, ou pelo menos se trata o erro. O tipo protege o **seu código**; a validação protege contra a **API**.
+
+**Como `Guid`, `DateOnly`, `decimal` e `enum` do C# chegam no TypeScript?**
+> `Guid` e as datas chegam como `string` (o JSON não tem tipo de data). `int` e `decimal` viram `number` (o JavaScript só tem um tipo numérico; para dinheiro, cuidado com arredondamento e formate com `Intl.NumberFormat`). O `enum` chega como texto com o `JsonStringEnumConverter`; sem ele, chega o número.
+
+**`campo?: T` × `campo: T | null`?**
+> O `?:` diz que o campo **pode não vir** no objeto (`undefined`). O `| null` diz que o campo **sempre vem**, mas o valor pode ser nulo. O `System.Text.Json` escreve `"complemento": null`, então o certo para um `string?` do C# é `string | null`. Os dois obrigam a tratar o caso vazio antes de usar.
+
+**Por que não usar o `enum` do TypeScript?**
+> Porque ele gera código JavaScript (um objeto), ao contrário do resto do TypeScript, que só é apagado. Com o `erasableSyntaxOnly` (padrão no modelo do Vite e exigido para rodar TS direto no Node), o `enum` é proibido. A alternativa é a união de literais (`"Pastor" | "Tesoureiro"`), que some no build.
+
+**O que faz `as const`? E `(typeof LISTA)[number]`?**
+> O `as const` congela o valor: a lista vira somente leitura, e cada item fica com o tipo do texto exato, e não `string`. O `typeof LISTA` pega o tipo da variável, e o `[number]` pede o tipo de qualquer posição, o que dá a união de todos os itens. Assim, os valores são escritos uma vez só e servem como **lista** (para um `<select>`) e como **tipo**.
+
+**Para que serve o `Record<K, V>`?**
+> É um objeto com chaves do tipo `K` e valores do tipo `V`, como um `Dictionary` do C#. Com `K` sendo uma união, como em `Record<Perfil, string>`, o compilador exige **todas** as chaves: um perfil novo sem rótulo quebra o build.
+
+**`satisfies` × anotação de tipo (`const x: T = ...`)?**
+> Os dois conferem se o valor obedece o tipo. A anotação **alarga** a variável para `T`. O `satisfies` confere e mantém o tipo exato do valor (por exemplo, `"Cooperador"` em vez da união inteira de cargos).
+
+**O que é interseção (`&`)?**
+> `A & B` é um tipo com tudo de `A` e tudo de `B`. Faz o papel da herança na hora de compor tipos: `HttpValidationProblemDetails = ProblemDetails & { errors: ... }`.
+
+**O que é `ProblemDetails`?**
+> O formato padrão de erro HTTP da RFC 9457, com `Content-Type: application/problem+json` e os campos `type`, `title`, `status` e `detail`. O ASP.NET o produz com o `AddProblemDetails`. Tipar esse formato deixa o frontend mostrar a mensagem certa de cada erro (400 com os campos, 404, 422...).
+
+**Escrever os tipos à mão ou gerar?**
+> Em projetos maiores, gera-se a partir do OpenAPI da API (com `openapi-typescript` ou `orval`), e o tipo nunca fica desatualizado. À mão é bom para aprender o mapeamento e para APIs pequenas, mas exige disciplina para acompanhar cada mudança no backend.
+
+**O que são *branded types*?**
+> Uma técnica para o compilador diferenciar tipos que são a mesma coisa por baixo, como `type Guid = string & { readonly __marca: "Guid" }`. Assim, uma `string` qualquer não passa onde se pede um `Guid`. Um apelido simples (`type Guid = string`) só documenta: qualquer `string` serve.
 
 ---
 

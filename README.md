@@ -4,7 +4,7 @@ Sistema web para a gestão de igrejas: **matriz e filiais, membros, cargos ecles
 
 O projeto é construído **passo a passo, como um curso**, com foco em boas práticas de **C#/.NET** e **React/TypeScript**: arquitetura limpa, tipagem forte, validação em camadas e segurança desde o início.
 
-> 🚧 **Em desenvolvimento.** O **backend** (API REST) está funcional, com cadastro de igrejas, membros e usuários, login com JWT, permissões por perfil, **escopo de acesso por igreja e por grupo**, aniversariantes do mês, **registros de batismo e de apresentação de criança** e **certificados em PDF** de promoção, batismo e apresentação. O **frontend** em React começa no Módulo 6 e, por enquanto, ainda é o template inicial do Vite. Veja o [Roteiro](#-roteiro).
+> 🚧 **Em desenvolvimento.** O **backend** (API REST) está funcional, com cadastro de igrejas, membros e usuários, login com JWT, permissões por perfil, **escopo de acesso por igreja e por grupo**, aniversariantes do mês, **registros de batismo e de apresentação de criança**, **certificados em PDF** de promoção, batismo e apresentação e o **financeiro** (lançamentos, estorno, relatórios, fechamento mensal e recibo de dízimo em PDF). O **frontend** em React, na pasta `frontend/`, já tem a tela inicial em componentes (TypeScript strict e Tailwind) e os tipos que espelham os DTOs da API; o consumo da API começa no Módulo 7. Veja o [Roteiro](#-roteiro).
 
 ---
 
@@ -256,6 +256,8 @@ Temple/
 │   └── Temple.Tests/                # xUnit
 ├── frontend/
 │   ├── src/                         # main.tsx (ponto de entrada), App.tsx, index.css (Tailwind)
+│   │   ├── components/              # componentes da tela, um por arquivo
+│   │   └── api/tipos/               # tipos TypeScript espelhando os DTOs do C#
 │   ├── public/                      # arquivos servidos como estão (favicon)
 │   ├── index.html                   # a única página da SPA
 │   ├── vite.config.ts               # plugins do React e do Tailwind
