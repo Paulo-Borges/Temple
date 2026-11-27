@@ -562,3 +562,55 @@ Authorization: Bearer {{token}}
 ### Mês no futuro (400)
 GET {{baseUrl}}/api/relatorios-financeiros/mensal?igrejaId={{igrejasAtivas.response.body.$[0].id}}&ano=2099&mes=1
 Authorization: Bearer {{token}}
+
+### ===================== FECHAMENTO MENSAL (Pastor e Tesoureiro fecham; só o Pastor reabre) =====================
+
+### Fechar outubro/2026 da primeira igreja ativa (só mês terminado, em ordem, a partir do mês do primeiro lançamento)
+POST {{baseUrl}}/api/fechamentos/fechar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "igrejaId": "{{igrejasAtivas.response.body.$[0].id}}",
+  "ano": 2026,
+  "mes": 10
+}
+
+### Lançar em outubro depois de fechado (422)
+POST {{baseUrl}}/api/lancamentos/ofertas
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "igrejaId": "{{igrejasAtivas.response.body.$[0].id}}",
+  "data": "2026-10-20",
+  "valor": 10.00,
+  "formaPagamento": "Pix"
+}
+
+### Fechar o mês atual, que ainda não terminou (422)
+POST {{baseUrl}}/api/fechamentos/fechar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "igrejaId": "{{igrejasAtivas.response.body.$[0].id}}",
+  "ano": 2026,
+  "mes": 11
+}
+
+### Listar os fechamentos da igreja (inclusive os reabertos)
+GET {{baseUrl}}/api/fechamentos?igrejaId={{igrejasAtivas.response.body.$[0].id}}
+Authorization: Bearer {{token}}
+
+### Reabrir outubro/2026 (só o Pastor, e só o último mês fechado)
+POST {{baseUrl}}/api/fechamentos/reabrir
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "igrejaId": "{{igrejasAtivas.response.body.$[0].id}}",
+  "ano": 2026,
+  "mes": 10,
+  "motivo": "Faltou lançar a conta de água"
+}

@@ -19,6 +19,8 @@ public sealed class TempleDbContext(DbContextOptions<TempleDbContext> options)
 
     public DbSet<Lancamento> Lancamentos => Set<Lancamento>();
 
+    public DbSet<FechamentoMensal> FechamentosMensais => Set<FechamentoMensal>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

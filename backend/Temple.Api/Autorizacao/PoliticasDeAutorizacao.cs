@@ -23,7 +23,9 @@ internal static class PoliticasDeAutorizacao
             .AdicionarPolitica(Permissoes.EmitirCertificados, Perfil.Pastor, Perfil.Secretario)
             .AdicionarPolitica(Permissoes.GerenciarRegistros, Perfil.Pastor, Perfil.Secretario)
             .AdicionarPolitica(Permissoes.LancarFinanceiro, Perfil.Pastor, Perfil.Tesoureiro)
-            .AdicionarPolitica(Permissoes.EstornarFinanceiro, Perfil.Pastor);
+            .AdicionarPolitica(Permissoes.EstornarFinanceiro, Perfil.Pastor)
+            .AdicionarPolitica(Permissoes.FecharMesFinanceiro, Perfil.Pastor, Perfil.Tesoureiro)
+            .AdicionarPolitica(Permissoes.ReabrirMesFinanceiro, Perfil.Pastor);
 
     }
 

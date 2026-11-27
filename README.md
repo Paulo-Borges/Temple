@@ -92,6 +92,20 @@ O projeto é construído **passo a passo, como um curso**, com foco em boas prá
 - A consulta é **paginada**, com filtros por igreja, período, tipo, membro e estornados, e mostra os mais recentes primeiro. Ela respeita o [escopo de acesso](#-funcionalidades): o Tesoureiro de uma filial vê só a própria filial.
 - O banco também protege as regras principais com **CHECK constraints**, como valor positivo, dízimo sempre com membro e categoria só na despesa.
 
+**Relatórios financeiros**
+- **Relatório mensal** de uma igreja, como um extrato: **saldo anterior** (tudo antes do mês) + entradas − saídas = **saldo final**. As entradas vêm separadas por tipo e as saídas por categoria, sempre com a lista completa, mesmo com valor zero. Os lançamentos estornados não contam.
+- **Consolidado** da matriz com todas as filiais, inclusive as inativas: os totais somados e o resumo de cada igreja, com a matriz primeiro.
+- A soma é feita **no banco** (`GROUP BY` + `SUM`), e só as linhas de total voltam para a aplicação.
+- O mês atual é permitido, mostrando o movimento até agora; um mês no futuro é recusado (**400**). O consolidado só aceita uma matriz (**422**).
+
+**Fechamento mensal**
+- O Pastor ou o Tesoureiro **fecham o mês** de uma igreja. O fechamento guarda uma **foto dos totais** (saldo anterior, entradas, saídas e saldo final), quem fechou e quando.
+- As regras:
+  - só um mês que **já terminou**;
+  - **em ordem**: o primeiro a fechar é o mês do lançamento mais antigo, e depois cada mês seguinte;
+  - um mês fechado **não aceita lançamento nem estorno** (**422**). Como os meses fecham em ordem, tudo até o último mês fechado fica travado, e o saldo de um mês fechado nunca muda.
+- Só o **Pastor reabre**, com motivo obrigatório, e só o **último** mês fechado. O fechamento reaberto continua no **histórico**, com quem reabriu, quando e por quê. Fechar de novo gera uma foto nova.
+
 **Autenticação**
 - Login com e-mail e senha (ASP.NET Identity), devolvendo um **token JWT** que vale 8 horas.
 - **Todas as rotas exigem login**, exceto a própria rota de login.
@@ -127,7 +141,7 @@ O projeto é construído **passo a passo, como um curso**, com foco em boas prá
 - O escopo é calculado a partir dos dados do banco a cada requisição, e não do token.
 
 ### 🔜 Planejadas
-- **Relatórios do financeiro**: saldo e fechamento mensal por igreja, o consolidado da matriz com as filiais e o comprovante de dízimo em PDF.
+- **Comprovante de dízimo** em PDF.
 - Interface web em **React**.
 
 ### 🔐 Matriz de permissões (aprovada)
@@ -140,7 +154,7 @@ O projeto é construído **passo a passo, como um curso**, com foco em boas prá
 | Líderes (Varões, Irmãs, Jovens, Crianças) | — | Ver o próprio grupo | — | ✔ do grupo | — |
 | Funcionário / Cozinheira | — | Ver o próprio perfil | — | — | — |
 
-> Esta é a matriz completa, o objetivo do projeto. **Já em vigor:** as permissões de igrejas, membros e usuários (veja a coluna *Permissão* em [Endpoints da API](#-endpoints-da-api)) e o [escopo de acesso](#-funcionalidades): os Líderes veem os membros e os aniversariantes do próprio grupo, e o Funcionário e a Cozinheira veem o próprio cadastro. Os aniversariantes já estão em vigor para todos os perfis da coluna. A emissão de certificados também já vale para o Pastor e o Secretário (permissão `Certificados.Emitir`), assim como o registro de batismos e apresentações (permissão `Registros.Gerenciar`). No financeiro, o Pastor e o Tesoureiro já lançam e consultam (permissão `Financeiro.Lancar`), e só o Pastor estorna (permissão `Financeiro.Estornar`). Os relatórios chegam no restante do Módulo 5B.
+> Esta é a matriz completa, o objetivo do projeto. **Já em vigor:** as permissões de igrejas, membros e usuários (veja a coluna *Permissão* em [Endpoints da API](#-endpoints-da-api)) e o [escopo de acesso](#-funcionalidades): os Líderes veem os membros e os aniversariantes do próprio grupo, e o Funcionário e a Cozinheira veem o próprio cadastro. Os aniversariantes já estão em vigor para todos os perfis da coluna. A emissão de certificados também já vale para o Pastor e o Secretário (permissão `Certificados.Emitir`), assim como o registro de batismos e apresentações (permissão `Registros.Gerenciar`). No financeiro, o Pastor e o Tesoureiro já lançam, consultam e veem os relatórios (permissão `Financeiro.Lancar`) e fecham o mês (permissão `Financeiro.FecharMes`); só o Pastor estorna (permissão `Financeiro.Estornar`) e reabre um mês fechado (permissão `Financeiro.ReabrirMes`).
 
 ---
 
@@ -197,7 +211,7 @@ O backend segue a **Clean Architecture**: as dependências apontam sempre **para
 
 | Camada | Responsabilidade |
 |---|---|
-| **Domain** | Entidades (`Igreja`, `Membro`, `HistoricoCargo`, `Batismo`, `ApresentacaoCrianca`, `CertificadoEmitido`, `Lancamento`), o value object `Endereco`, os enums e as **regras de negócio**. Nada é alterado "por fora": tudo passa por métodos que validam. |
+| **Domain** | Entidades (`Igreja`, `Membro`, `HistoricoCargo`, `Batismo`, `ApresentacaoCrianca`, `CertificadoEmitido`, `Lancamento`, `FechamentoMensal`), o value object `Endereco`, os enums e as **regras de negócio**. Nada é alterado "por fora": tudo passa por métodos que validam. |
 | **Application** | Casos de uso (services), DTOs (`record`), validadores e as **interfaces** que a Infrastructure implementa: repositórios, Unit of Work, identidade, usuários, token e gerador de PDF. |
 | **Infrastructure** | Implementações técnicas: `TempleDbContext`, mapeamentos do EF, repositórios, ASP.NET Identity (usuários, perfis e mensagens em português), geração do JWT, geração do PDF (QuestPDF) e seeds. |
 | **Api** | Entrada HTTP: controllers, autenticação, políticas de autorização por permissão, `ProblemDetails` e Swagger. |
@@ -228,6 +242,7 @@ Temple/
 │   ├── Temple.Domain/               # Entities, ValueObjects, Enums, Exceptions
 │   ├── Temple.Application/          # Igrejas, Membros, Aniversariantes, Batismos,
 │   │                                #   Apresentacoes, Certificados, Lancamentos,
+│   │                                #   RelatoriosFinanceiros, Fechamentos,
 │   │                                #   Usuarios, Autenticacao, Comum
 │   ├── Temple.Infrastructure/       # Persistence (DbContext, Configurations,
 │   │                                #   Migrations, Repositorios, Seed), Identidade,
@@ -320,6 +335,19 @@ As rotas de criação respondem **201** com o lançamento e o cabeçalho `Locati
 | `GET` | `/api/lancamentos?igrejaId=&de=&ate=&tipo=&membroId=&incluirEstornados=true&pagina=1&tamanhoPagina=20` | Lista paginada com filtros, dos mais recentes para os mais antigos (máximo de 100 por página) | Pastor, Tesoureiro |
 | `GET` | `/api/lancamentos/{id}` | Busca um lançamento | Pastor, Tesoureiro |
 | `POST` | `/api/lancamentos/{id}/estornar` | Estorna o lançamento (`motivo` obrigatório) e devolve o lançamento atualizado | Pastor |
+
+### Relatórios financeiros
+| Método | Rota | Descrição | Permissão |
+|---|---|---|---|
+| `GET` | `/api/relatorios-financeiros/mensal?igrejaId=&ano=&mes=` | Relatório do mês da igreja: saldo anterior, entradas por tipo, saídas por categoria e saldo final | Pastor, Tesoureiro |
+| `GET` | `/api/relatorios-financeiros/consolidado?igrejaId=&ano=&mes=` | Consolidado da matriz (`igrejaId`) com as filiais: totais somados e o resumo de cada igreja | Pastor, Tesoureiro |
+
+### Fechamento mensal
+| Método | Rota | Descrição | Permissão |
+|---|---|---|---|
+| `POST` | `/api/fechamentos/fechar` | Fecha o mês (`igrejaId`, `ano`, `mes`) e devolve o fechamento com a foto dos totais | Pastor, Tesoureiro |
+| `POST` | `/api/fechamentos/reabrir` | Reabre o último mês fechado (`igrejaId`, `ano`, `mes`, `motivo`) | Pastor |
+| `GET` | `/api/fechamentos?igrejaId=` | Histórico de fechamentos da igreja, inclusive os reabertos, do mais recente para o mais antigo | Pastor, Tesoureiro |
 
 ### Usuários
 | Método | Rota | Descrição | Permissão |

@@ -280,6 +280,75 @@ namespace Temple.Infrastructure.Persistence.Migrations
                     b.ToTable("CertificadosEmitidos", (string)null);
                 });
 
+            modelBuilder.Entity("Temple.Domain.Entities.FechamentoMensal", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Ano")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("FechadoEm")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("FechadoPorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("FechadoPorNome")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<Guid>("IgrejaId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Mes")
+                        .HasColumnType("int");
+
+                    b.Property<string>("MotivoDaReabertura")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTimeOffset?>("ReabertoEm")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("ReabertoPorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ReabertoPorNome")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<decimal>("SaldoAnterior")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("SaldoFinal")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("TotalEntradas")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("TotalSaidas")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IgrejaId", "Ano", "Mes")
+                        .IsUnique()
+                        .HasFilter("[ReabertoEm] IS NULL");
+
+                    b.ToTable("FechamentosMensais", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_FechamentosMensais_Mes", "[Mes] BETWEEN 1 AND 12");
+
+                            t.HasCheckConstraint("CK_FechamentosMensais_Reabertura", "([MotivoDaReabertura] IS NULL AND [ReabertoPorId] IS NULL AND [ReabertoPorNome] IS NULL AND [ReabertoEm] IS NULL) OR ([MotivoDaReabertura] IS NOT NULL AND [ReabertoPorId] IS NOT NULL AND [ReabertoPorNome] IS NOT NULL AND [ReabertoEm] IS NOT NULL)");
+                        });
+                });
+
             modelBuilder.Entity("Temple.Domain.Entities.HistoricoCargo", b =>
                 {
                     b.Property<Guid>("Id")
@@ -737,6 +806,15 @@ namespace Temple.Infrastructure.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("MembroId")
                         .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("Temple.Domain.Entities.FechamentoMensal", b =>
+                {
+                    b.HasOne("Temple.Domain.Entities.Igreja", null)
+                        .WithMany()
+                        .HasForeignKey("IgrejaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Temple.Domain.Entities.HistoricoCargo", b =>

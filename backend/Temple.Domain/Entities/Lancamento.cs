@@ -90,6 +90,7 @@ public sealed class Lancamento
         bool descricaoObrigatoria,
         Guid registradoPorId,
         string registradoPorNome,
+        DateOnly? ultimoDiaFechado,
         DateTimeOffset agora)
     {
         ArgumentNullException.ThrowIfNull(igreja);
@@ -109,7 +110,7 @@ public sealed class Lancamento
         Tipo = tipo;
         MembroId = membroId;
         Categoria = categoria;
-        Data = ValidarData(data, agora);
+        Data = ValidarData(data, ultimoDiaFechado, agora);
         Valor = ValidarValor(valor);
         FormaPagamento = ValidarFormaPagamento(formaPagamento);
         Descricao = ValidarDescricao(descricao, descricaoObrigatoria);
@@ -127,6 +128,7 @@ public sealed class Lancamento
         string? observacao,
         Guid registradoPorId,
         string registradoPorNome,
+        DateOnly? ultimoDiaFechado,
         DateTimeOffset agora)
     {
         ArgumentNullException.ThrowIfNull(igreja);
@@ -142,7 +144,7 @@ public sealed class Lancamento
         return new Lancamento(
             igreja, TipoLancamento.Dizimo, membro.Id, categoria: null,
             data, valor, formaPagamento, observacao, descricaoObrigatoria: false,
-            registradoPorId, registradoPorNome, agora);
+            registradoPorId, registradoPorNome, ultimoDiaFechado, agora);
     }
 
     // Sem membro, a oferta é anônima. Com membro, pode ser lançada em qualquer igreja.
@@ -155,6 +157,7 @@ public sealed class Lancamento
         string? observacao,
         Guid registradoPorId,
         string registradoPorNome,
+        DateOnly? ultimoDiaFechado,
         DateTimeOffset agora)
     {
         Guid? membroId = null;
@@ -168,7 +171,7 @@ public sealed class Lancamento
         return new Lancamento(
             igreja, TipoLancamento.Oferta, membroId, categoria: null,
             data, valor, formaPagamento, observacao, descricaoObrigatoria: false,
-            registradoPorId, registradoPorNome, agora);
+            registradoPorId, registradoPorNome, ultimoDiaFechado, agora);
     }
 
     public static Lancamento OutraEntrada(
@@ -179,12 +182,13 @@ public sealed class Lancamento
         string descricao,
         Guid registradoPorId,
         string registradoPorNome,
+        DateOnly? ultimoDiaFechado,
         DateTimeOffset agora)
     {
         return new Lancamento(
             igreja, TipoLancamento.OutraEntrada, membroId: null, categoria: null,
             data, valor, formaPagamento, descricao, descricaoObrigatoria: true,
-            registradoPorId, registradoPorNome, agora);
+            registradoPorId, registradoPorNome, ultimoDiaFechado, agora);
     }
 
     public static Lancamento Despesa(
@@ -196,6 +200,7 @@ public sealed class Lancamento
         string descricao,
         Guid registradoPorId,
         string registradoPorNome,
+        DateOnly? ultimoDiaFechado,
         DateTimeOffset agora)
     {
         if (!Enum.IsDefined(categoria))
@@ -206,7 +211,7 @@ public sealed class Lancamento
         return new Lancamento(
             igreja, TipoLancamento.Despesa, membroId: null, categoria,
             data, valor, formaPagamento, descricao, descricaoObrigatoria: true,
-            registradoPorId, registradoPorNome, agora);
+            registradoPorId, registradoPorNome, ultimoDiaFechado, agora);
     }
 
         // A regra única de natureza: só a despesa é saída. Os relatórios usam este método sem precisar da entidade.
@@ -226,12 +231,14 @@ public sealed class Lancamento
         return Natureza == NaturezaLancamento.Entrada ? Valor : -Valor;
     }
 
-    public void Estornar(string motivo, Guid estornadoPorId, string estornadoPorNome, DateTimeOffset agora)
+    public void Estornar(string motivo, Guid estornadoPorId, string estornadoPorNome, DateOnly? ultimoDiaFechado, DateTimeOffset agora)
     {
         if (Estornado)
         {
             throw new DomainException("Este lançamento já foi estornado.");
         }
+
+        ValidarMesAberto(Data, ultimoDiaFechado);
 
         // Valida tudo antes de alterar: se algo falhar, o lançamento continua como estava.
         string motivoValidado = ValidarMotivo(motivo);
@@ -251,7 +258,7 @@ public sealed class Lancamento
         }
     }
 
-    private static DateOnly ValidarData(DateOnly data, DateTimeOffset agora)
+       private static DateOnly ValidarData(DateOnly data, DateOnly? ultimoDiaFechado, DateTimeOffset agora)
     {
         DateOnly hoje = DateOnly.FromDateTime(agora.DateTime);
 
@@ -260,7 +267,18 @@ public sealed class Lancamento
             throw new DomainException("A data do lançamento não pode estar no futuro.");
         }
 
+        ValidarMesAberto(data, ultimoDiaFechado);
+
         return data;
+    }
+
+    // Os meses fecham em ordem, então tudo até o último dia fechado está travado. Nulo: nenhum mês fechado.
+    private static void ValidarMesAberto(DateOnly data, DateOnly? ultimoDiaFechado)
+    {
+        if (ultimoDiaFechado is DateOnly limite && data <= limite)
+        {
+            throw new DomainException($"O mês {data.Month:D2}/{data.Year} já está fechado. Para alterá-lo, o Pastor precisa reabrir o mês.");
+        }
     }
 
     private static decimal ValidarValor(decimal valor)

@@ -39,7 +39,7 @@ public sealed class RelatorioFinanceiroService(
             .Select(categoria => new TotalPorCategoriaResponse(categoria, doMes.Where(total => total.Categoria == categoria).Sum(total => total.Total)))
             .ToList();
 
-        decimal saldoAnterior = SaldoAntesDoMes(totais);
+        decimal saldoAnterior = CalculoDoSaldo.SaldoAntesDoMes(totais);
         decimal totalEntradas = entradasPorTipo.Sum(entrada => entrada.Total);
         decimal totalSaidas = saidasPorCategoria.Sum(saida => saida.Total);
 
@@ -94,15 +94,9 @@ public sealed class RelatorioFinanceiroService(
 
     private static ResumoDaIgrejaResponse Resumir(Igreja igreja, IReadOnlyList<TotalDeLancamentos> totais)
     {
-        List<TotalDeLancamentos> doMes = totais.Where(total => !total.AntesDoMes).ToList();
-
-        decimal saldoAnterior = SaldoAntesDoMes(totais);
-        decimal totalEntradas = doMes
-            .Where(total => Lancamento.NaturezaDo(total.Tipo) == NaturezaLancamento.Entrada)
-            .Sum(total => total.Total);
-        decimal totalSaidas = doMes
-            .Where(total => Lancamento.NaturezaDo(total.Tipo) == NaturezaLancamento.Saida)
-            .Sum(total => total.Total);
+        decimal saldoAnterior = CalculoDoSaldo.SaldoAntesDoMes(totais);
+        decimal totalEntradas = CalculoDoSaldo.EntradasDoMes(totais);
+        decimal totalSaidas = CalculoDoSaldo.SaidasDoMes(totais);
 
         return new ResumoDaIgrejaResponse(
             igreja.Id,
@@ -112,14 +106,6 @@ public sealed class RelatorioFinanceiroService(
             totalEntradas,
             totalSaidas,
             saldoAnterior + totalEntradas - totalSaidas);
-    }
-
-    // Entrada soma, saída subtrai: a mesma regra do ValorNoSaldo do lançamento.
-    private static decimal SaldoAntesDoMes(IReadOnlyList<TotalDeLancamentos> totais)
-    {
-        return totais
-            .Where(total => total.AntesDoMes)
-            .Sum(total => Lancamento.NaturezaDo(total.Tipo) == NaturezaLancamento.Entrada ? total.Total : -total.Total);
     }
 
     private async Task<Igreja> ObterIgrejaAsync(Guid id, CancellationToken cancellationToken)

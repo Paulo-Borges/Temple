@@ -4,6 +4,7 @@ using Temple.Application.Comum;
 using Temple.Application.Comum.Acesso;
 using Temple.Application.Comum.Excecoes;
 using Temple.Application.Comum.Persistencia;
+using Temple.Application.Fechamentos;
 using Temple.Application.Igrejas;
 using Temple.Application.Membros;
 using Temple.Domain.Entities;
@@ -12,6 +13,7 @@ namespace Temple.Application.Lancamentos;
 
 public sealed class LancamentoService(
     ILancamentoRepository lancamentoRepository,
+    IFechamentoRepository fechamentoRepository,
     IIgrejaRepository igrejaRepository,
     IMembroRepository membroRepository,
     IUnitOfWork unitOfWork,
@@ -51,6 +53,7 @@ public sealed class LancamentoService(
         Membro membro = await ObterMembroNoEscopoAsync(request.MembroId, cancellationToken);
         UsuarioAutenticado autor = await ObterAutorAsync(cancellationToken);
 
+        DateOnly? ultimoDiaFechado = await ObterUltimoDiaFechadoAsync(igreja.Id, cancellationToken);
         Lancamento lancamento = Lancamento.Dizimo(
             igreja,
             membro,
@@ -60,6 +63,7 @@ public sealed class LancamentoService(
             request.Observacao,
             autor.Id,
             autor.Nome,
+            ultimoDiaFechado,
             timeProvider.GetLocalNow());
 
         return await AdicionarAsync(lancamento, cancellationToken);
@@ -85,6 +89,8 @@ public sealed class LancamentoService(
             }
         }
 
+        DateOnly? ultimoDiaFechado = await ObterUltimoDiaFechadoAsync(igreja.Id, cancellationToken);
+
         Lancamento lancamento = Lancamento.Oferta(
             igreja,
             membro,
@@ -94,6 +100,7 @@ public sealed class LancamentoService(
             request.Observacao,
             autor.Id,
             autor.Nome,
+            ultimoDiaFechado,
             timeProvider.GetLocalNow());
 
         return await AdicionarAsync(lancamento, cancellationToken);
@@ -106,6 +113,8 @@ public sealed class LancamentoService(
         Igreja igreja = await ObterIgrejaAsync(request.IgrejaId, cancellationToken);
         UsuarioAutenticado autor = await ObterAutorAsync(cancellationToken);
 
+        DateOnly? ultimoDiaFechado = await ObterUltimoDiaFechadoAsync(igreja.Id, cancellationToken);
+
         Lancamento lancamento = Lancamento.OutraEntrada(
             igreja,
             request.Data,
@@ -114,6 +123,7 @@ public sealed class LancamentoService(
             request.Descricao,
             autor.Id,
             autor.Nome,
+            ultimoDiaFechado,
             timeProvider.GetLocalNow());
 
         return await AdicionarAsync(lancamento, cancellationToken);
@@ -126,6 +136,8 @@ public sealed class LancamentoService(
         Igreja igreja = await ObterIgrejaAsync(request.IgrejaId, cancellationToken);
         UsuarioAutenticado autor = await ObterAutorAsync(cancellationToken);
 
+        DateOnly? ultimoDiaFechado = await ObterUltimoDiaFechadoAsync(igreja.Id, cancellationToken);
+
         Lancamento lancamento = Lancamento.Despesa(
             igreja,
             request.Categoria,
@@ -135,6 +147,7 @@ public sealed class LancamentoService(
             request.Descricao,
             autor.Id,
             autor.Nome,
+            ultimoDiaFechado,
             timeProvider.GetLocalNow());
 
         return await AdicionarAsync(lancamento, cancellationToken);
@@ -154,7 +167,9 @@ public sealed class LancamentoService(
         Lancamento lancamento = await ObterEntidadeAsync(id, cancellationToken);
         UsuarioAutenticado autor = await ObterAutorAsync(cancellationToken);
 
-        lancamento.Estornar(request.Motivo, autor.Id, autor.Nome, timeProvider.GetLocalNow());
+        DateOnly? ultimoDiaFechado = await ObterUltimoDiaFechadoAsync(lancamento.IgrejaId, cancellationToken);
+
+        lancamento.Estornar(request.Motivo, autor.Id, autor.Nome, ultimoDiaFechado, timeProvider.GetLocalNow());
 
         await unitOfWork.SalvarAlteracoesAsync(cancellationToken);
 
@@ -206,6 +221,19 @@ public sealed class LancamentoService(
         }
 
         return membro;
+    }
+
+    // Nulo quando a igreja não tem nenhum mês fechado.
+    private async Task<DateOnly?> ObterUltimoDiaFechadoAsync(Guid igrejaId, CancellationToken cancellationToken)
+    {
+        FechamentoMensal? ultimoFechado = await fechamentoRepository.ObterUltimoAsync(igrejaId, cancellationToken);
+
+        if (ultimoFechado is null)
+        {
+            return null;
+        }
+
+        return ultimoFechado.UltimoDia;
     }
 
     private async Task<UsuarioAutenticado> ObterAutorAsync(CancellationToken cancellationToken)

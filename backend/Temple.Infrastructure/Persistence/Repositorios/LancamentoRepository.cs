@@ -69,6 +69,24 @@ internal sealed class LancamentoRepository(TempleDbContext context) : ILancament
 
         return new ResultadoPaginado<Lancamento>(itens, totalItens);
     }
+
+    public async Task<DateOnly?> ObterDataDoPrimeiroLancamentoAsync(Guid igrejaId, CancellationToken cancellationToken)
+    {
+        List<DateOnly> datas = await context.Lancamentos
+            .AsNoTracking()
+            .Where(lancamento => lancamento.IgrejaId == igrejaId)
+            .OrderBy(lancamento => lancamento.Data)
+            .Select(lancamento => lancamento.Data)
+            .Take(1)
+            .ToListAsync(cancellationToken);
+
+        if (datas.Count == 0)
+        {
+            return null;
+        }
+
+        return datas[0];
+    }
     public void Adicionar(Lancamento lancamento)
     {
         context.Lancamentos.Add(lancamento);

@@ -10,5 +10,7 @@ public interface ILancamentoRepository
 
     Task<ResultadoPaginado<Lancamento>> ListarAsync(ListarLancamentosRequest filtro, EscopoDeAcesso escopo, CancellationToken cancellationToken);
 
+        // A data do lançamento mais antigo da igreja (estornado ou não), ou nulo se ela não tiver lançamentos.
+    Task<DateOnly?> ObterDataDoPrimeiroLancamentoAsync(Guid igrejaId, CancellationToken cancellationToken);
     void Adicionar(Lancamento lancamento);
 }

@@ -5,6 +5,7 @@ using Temple.Application.Aniversariantes;
 using Temple.Application.Apresentacoes;  
 using Temple.Application.Batismos;        
 using Temple.Application.Certificados;
+using Temple.Application.Fechamentos;
 using Temple.Application.Comum.Acesso;
 using Temple.Application.Igrejas;
 using Temple.Application.Lancamentos;
@@ -33,6 +34,7 @@ public static class DependencyInjection
         services.AddScoped<ApresentacaoService>();
         services.AddScoped<LancamentoService>(); 
         services.AddScoped<RelatorioFinanceiroService>();   
+        services.AddScoped<FechamentoService>();
         services.AddSingleton(TimeProvider.System);
 
         return services;
