@@ -614,3 +614,9 @@ Content-Type: application/json
   "mes": 10,
   "motivo": "Faltou lançar a conta de água"
 }
+
+### ===================== RECIBO DE DÍZIMO (Pastor e Tesoureiro) =====================
+
+### Recibo do dízimo registrado na seção FINANCEIRO (devolve o PDF; se ele foi estornado, dá 422)
+GET {{baseUrl}}/api/lancamentos/{{criarDizimo.response.body.$.id}}/recibo
+Authorization: Bearer {{token}}

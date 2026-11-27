@@ -106,6 +106,11 @@ O projeto é construído **passo a passo, como um curso**, com foco em boas prá
   - um mês fechado **não aceita lançamento nem estorno** (**422**). Como os meses fecham em ordem, tudo até o último mês fechado fica travado, e o saldo de um mês fechado nunca muda.
 - Só o **Pastor reabre**, com motivo obrigatório, e só o **último** mês fechado. O fechamento reaberto continua no **histórico**, com quem reabriu, quando e por quê. Fechar de novo gera uma foto nova.
 
+**Recibo de dízimo**
+- Cada dízimo tem um **recibo em PDF** (A5 paisagem, meia folha), gerado na hora a partir do lançamento: o nome e o CNPJ da igreja, o membro e a matrícula, o valor em número e **por extenso** ("mil duzentos e cinquenta reais e cinquenta centavos"), a forma de pagamento, a observação, a cidade e a data por extenso, a linha de assinatura da Tesouraria e, no rodapé, quem registrou e o código do lançamento.
+- O recibo não tem número nem registro de emissão: pode ser baixado quantas vezes for preciso, e sai sempre igual, porque o lançamento não muda.
+- Só o dízimo tem recibo, e um dízimo estornado não tem (**422**). O PDF é baixado com o nome `recibo-dizimo-AAAA-MM-DD-<código>.pdf`.
+
 **Autenticação**
 - Login com e-mail e senha (ASP.NET Identity), devolvendo um **token JWT** que vale 8 horas.
 - **Todas as rotas exigem login**, exceto a própria rota de login.
@@ -141,7 +146,6 @@ O projeto é construído **passo a passo, como um curso**, com foco em boas prá
 - O escopo é calculado a partir dos dados do banco a cada requisição, e não do token.
 
 ### 🔜 Planejadas
-- **Comprovante de dízimo** em PDF.
 - Interface web em **React**.
 
 ### 🔐 Matriz de permissões (aprovada)
@@ -242,11 +246,11 @@ Temple/
 │   ├── Temple.Domain/               # Entities, ValueObjects, Enums, Exceptions
 │   ├── Temple.Application/          # Igrejas, Membros, Aniversariantes, Batismos,
 │   │                                #   Apresentacoes, Certificados, Lancamentos,
-│   │                                #   RelatoriosFinanceiros, Fechamentos,
+│   │                                #   RelatoriosFinanceiros, Fechamentos, Comprovantes,
 │   │                                #   Usuarios, Autenticacao, Comum
 │   ├── Temple.Infrastructure/       # Persistence (DbContext, Configurations,
 │   │                                #   Migrations, Repositorios, Seed), Identidade,
-│   │                                #   Certificados (PDF)
+│   │                                #   Certificados e Comprovantes (PDF)
 │   ├── Temple.Api/                  # Controllers, Autorizacao, Configuracao, Tratamento,
 │   │                                #   Program.cs, Temple.Api.http
 │   └── Temple.Tests/                # xUnit
@@ -335,6 +339,7 @@ As rotas de criação respondem **201** com o lançamento e o cabeçalho `Locati
 | `GET` | `/api/lancamentos?igrejaId=&de=&ate=&tipo=&membroId=&incluirEstornados=true&pagina=1&tamanhoPagina=20` | Lista paginada com filtros, dos mais recentes para os mais antigos (máximo de 100 por página) | Pastor, Tesoureiro |
 | `GET` | `/api/lancamentos/{id}` | Busca um lançamento | Pastor, Tesoureiro |
 | `POST` | `/api/lancamentos/{id}/estornar` | Estorna o lançamento (`motivo` obrigatório) e devolve o lançamento atualizado | Pastor |
+| `GET` | `/api/lancamentos/{id}/recibo` | Recibo do dízimo em PDF (`application/pdf`), gerado na hora | Pastor, Tesoureiro |
 
 ### Relatórios financeiros
 | Método | Rota | Descrição | Permissão |
@@ -457,7 +462,7 @@ npm run dev
 | 3 | Application e API: DTOs, services, validação, controllers, CRUD de igrejas e membros | ✅ |
 | 4 | Segurança: Identity + JWT, perfis e policies, vínculo usuário ↔ membro e escopo por igreja | ✅ |
 | 5 | Regras de negócio: aniversariantes, promoções, batismos, apresentações e certificados em PDF | ✅ |
-| 5B | Financeiro: dízimos, ofertas, despesas e relatórios | 🔄 |
+| 5B | Financeiro: dízimos, ofertas, despesas, relatórios, fechamento mensal e recibo de dízimo | ✅ |
 | 6 | Fundamentos do frontend: React, TypeScript, Tailwind e React Router | ⬜ |
 | 7 | Integração front + API: Axios, TanStack Query, login e rotas protegidas | ⬜ |
 | 8 | Funcionalidades finais: aniversariantes, certificados e financeiro na tela | ⬜ |
