@@ -180,9 +180,9 @@ O projeto é construído **passo a passo, como um curso**, com foco em boas prá
 ### Frontend
 | Tecnologia | Situação |
 |---|---|
-| **React 19 + TypeScript 7 + Vite 8** | ✅ Projeto criado (template inicial), com TypeScript em modo `strict` |
+| **React 19 + TypeScript 7 + Vite 8** | ✅ Na pasta `frontend/`, com TypeScript em modo `strict` e `noUncheckedIndexedAccess` |
 | **Oxlint** | ✅ Lint configurado |
-| Tailwind CSS | 🔜 Módulo 6 |
+| **Tailwind CSS 4** | ✅ Com o plugin do Vite e as cores do Temple no `@theme` |
 | React Router | 🔜 Módulo 6 |
 | TanStack Query + Axios tipado | 🔜 Módulo 7 |
 | React Hook Form + Zod | 🔜 Módulo 7 |
@@ -254,11 +254,15 @@ Temple/
 │   ├── Temple.Api/                  # Controllers, Autorizacao, Configuracao, Tratamento,
 │   │                                #   Program.cs, Temple.Api.http
 │   └── Temple.Tests/                # xUnit
-├── src/                             # frontend React (template inicial do Vite)
-├── public/
-├── index.html
-├── package.json
+├── frontend/
+│   ├── src/                         # main.tsx (ponto de entrada), App.tsx, index.css (Tailwind)
+│   ├── public/                      # arquivos servidos como estão (favicon)
+│   ├── index.html                   # a única página da SPA
+│   ├── vite.config.ts               # plugins do React e do Tailwind
+│   ├── tsconfig*.json               # TypeScript strict (app e node)
+│   └── package.json
 ├── PLANO-DE-ESTUDO.md               # roteiro das aulas e diário do projeto
+├── PARA-A-ENTREVISTA.md             # perguntas de entrevista sobre cada aula
 └── README.md
 ```
 
@@ -416,12 +420,13 @@ dotnet run --project Temple.Api
 
 No Swagger, faça o login em `POST /api/autenticacao/login`, copie o `token`, clique em **🔒 Authorize** e cole o token. Os demais usuários são cadastrados pelo Pastor, em `POST /api/usuarios`, e cada um precisa ser ligado a um membro ativo já cadastrado.
 
-### 4. Frontend (template inicial)
-Na raiz do repositório:
+### 4. Frontend
+Na pasta `frontend`:
 ```bash
 npm install
 npm run dev
 ```
+A tela abre em **http://localhost:5173**. Os outros comandos são `npm run build` (checagem de tipos e build de produção em `dist/`) e `npm run lint` (oxlint).
 
 ---
 
@@ -463,7 +468,7 @@ npm run dev
 | 4 | Segurança: Identity + JWT, perfis e policies, vínculo usuário ↔ membro e escopo por igreja | ✅ |
 | 5 | Regras de negócio: aniversariantes, promoções, batismos, apresentações e certificados em PDF | ✅ |
 | 5B | Financeiro: dízimos, ofertas, despesas, relatórios, fechamento mensal e recibo de dízimo | ✅ |
-| 6 | Fundamentos do frontend: React, TypeScript, Tailwind e React Router | ⬜ |
+| 6 | Fundamentos do frontend: React, TypeScript, Tailwind e React Router | 🔄 |
 | 7 | Integração front + API: Axios, TanStack Query, login e rotas protegidas | ⬜ |
 | 8 | Funcionalidades finais: aniversariantes, certificados e financeiro na tela | ⬜ |
 | 9 | Qualidade: testes (xUnit e Vitest) e revisão | ⬜ |

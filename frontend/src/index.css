@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+@theme {
+  --color-temple-azul: #1f3a5f;
+  --color-temple-dourado: #b8860b;
+}
